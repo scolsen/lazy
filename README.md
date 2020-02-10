@@ -1,5 +1,7 @@
 # Lazy
 
+**Note: This is not an officially supported Google product.**
+
 `Lazy` is a Carp module that provides support for lazy computations. The main
 entry point exposed by the module is the `Lazy.lazy` macro which takes a body of
 some computation and returns a corresponding lazy computation. Here's an example
