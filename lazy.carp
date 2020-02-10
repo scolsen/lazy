@@ -1,0 +1,43 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(defmodule Lazy
+
+  (deftype (Lazy-Computation a) [evaluated? Bool, value a, thunk (Fn [] a)])
+
+  (defn lazy-computation [f]
+    (let [l (Lazy-Computation.init false (zero) f)]
+      (fn [] (if @(Lazy-Computation.evaluated? &l)
+                 @(Lazy-Computation.value &l)
+                 (do (Lazy-Computation.set-value! &l (~(Lazy-Computation.thunk &l)))
+		     (Lazy-Computation.set-evaluated?! &l true)
+		     @(Lazy-Computation.value &l))))))
+
+  (defmacro lazy [body]
+    (list 'Lazy.lazy-computation (list 'fn (array) body)))
+
+  (defmodule Typed
+    (deftype (Lazy f) [computation f])
+
+    (defn lazy-internal [f]
+      (Lazy.Typed.Lazy.init (Lazy.lazy-computation f)))
+
+    (defmacro lazy [body]
+      (list 'Lazy.Typed.lazy-internal (list 'fn (array) body)))
+
+    (sig force (Fn [(Ref (Lazy (Fn [] a)))] a))
+    (defn force [lazy-comp]
+      (~(Lazy.Typed.Lazy.computation lazy-comp)))
+  )
+)
