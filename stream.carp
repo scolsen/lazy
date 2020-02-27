@@ -1,0 +1,44 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(load "lazy.carp")
+(load "step.carp")
+
+(defmodule Lazy
+  (defmodule Stream
+   
+    (deftype (Stream a s) [step (Step a s)])
+ 
+    (sig from-array (Fn [(Ref (Array a))] (Pair (Maybe a) (Stream (Maybe a) Int))))
+    (sig next (Fn [(Pair a (Stream b s))] (Pair b (Stream b s))))
+    (sig map (Fn [(Ref (Fn [a] b)) (Ref (Pair c (Stream a s)))] (Pair b (Stream b s))))
+  
+    (defn from-array [as]
+      (let [step (Lazy.Step.from-array as)]
+      (Pair.init @(Lazy.Step.Step.value &step)
+                 (Stream.init step))))
+
+    (defn next [sp]
+      (let [s (Pair.b sp)]
+        (let [side-effect! (Lazy.Step.runstep (Stream.step s))]
+         (Pair.init @(Lazy.Step.Step.value (Stream.step s))
+                    @s))))
+
+    (defn map [f sp]
+      (let [s (Pair.b sp)]
+        (let [step (Stream.step s)]
+        (Pair.init (~f @(Lazy.Step.Step.value step))
+                   (Stream.init (Lazy.Step.map f step))))))
+  )
+)
