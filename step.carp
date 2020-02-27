@@ -1,0 +1,52 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+;; Implementation of the `Step` type, our backing model for Streams.
+;; Carp's compiler currently has some trouble with more straightforward
+;; definitions that work in other languages:
+
+(defmodule Lazy
+  (deftype (Step a s) [value a
+                        state s
+                        newState (Fn [s] s)
+                        newValue (Fn [s] a)])
+
+  (sig from-array (Fn [(Ref (Array a))] (Step (Maybe a) Int)))
+  (sig map (Fn [(Ref (Fn [a] b)) (Ref (Step a s))] (Step b s)))
+  (sig runstep (Fn [(Ref (Step a s))] (Ref (Step a s))))
+
+  (defn from-array [arr] 
+    (Step.init (Array.nth arr 0) 
+                0
+                inc
+                (fn [s] (Array.nth arr s))))
+
+  (defn runstep [step]
+    (let-do [s @(Step.state step)
+             ns (Step.newState step)
+             nv (Step.newValue step)]
+      (Step.set-state! step (~ns s))
+      (Step.set-value! step (~nv @(Step.state step)))
+      step))
+
+  (defn map [f step]
+    (let [v @(Step.value step)
+          s @(Step.state step)
+          ns @(Step.newState step)
+          g @(Step.newValue step)]
+      (Step.init (~f v)
+                  s
+		  ns
+                  (fn [x] (~f (g x))))))
+)
