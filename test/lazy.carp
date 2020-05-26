@@ -1,0 +1,46 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(load "Test.carp")
+(load "../lazy.carp")
+(use Test)
+(use Lazy)
+
+(deftest test
+  (assert-equal test
+    &(Suspended.init (lazy-computation (fn [] (+ 1 2))))
+    &(suspend (fn [] (+ 1 2)))
+    "suspend creates a lazy computation")
+  (assert-equal test
+    3
+    (force &(suspend (fn [] (+ 1 2))))
+    "force forces evalaution of a lazy computation")
+  (assert-equal test
+    3
+    (do (ignore (force &(suspend (fn [] (+ 1 2)))))
+        (force &(suspend (fn [] (+ 1 2)))))
+    "multiple applications of force yield the same result")
+  (assert-equal test
+    0
+    (yield &(suspend (fn [] (+ 1 2))))
+    "yield returns the value of a suspended computation without evaluating it")
+  (assert-equal test
+    2
+    (force &(Lazy.delay inc 1))
+    "delay promotes the application of a function to a lazy computation")
+  (assert-equal test
+    2
+    (force &(Lazy.lazy (inc 1)))
+    "lazy promotes an aribtrary form to a lazy computation")
+)
