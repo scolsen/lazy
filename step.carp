@@ -13,42 +13,61 @@
 ;;  limitations under the License.
 
 ;; Implementation of the `Step` type, our backing model for Streams.
-;; Carp's compiler currently has some trouble with more straightforward
-;; definitions that work in other languages:
 
-(defmodule Lazy
-  (defmodule Step
-    (deftype (Step a s) [value a
-                          state s
-                          newState (Fn [s] s)
-                          newValue (Fn [s] a)])
+(doc Step "
+  `Steps` define ways to produces successive values. They back the
+  implementation of lazy streams.")
+(deftype (Step a s) [value a
+                     state s
+                     new-state (Fn [(Ref s)] s)
+                     new-value (Fn [(Ref s)] a)])
 
-    (sig from-array (Fn [(Ref (Array a))] (Step (Maybe a) Int)))
-    (sig map (Fn [(Ref (Fn [a] b)) (Ref (Step a s))] (Step b s)))
-    (sig runstep (Fn [(Ref (Step a s))] (Ref (Step a s))))
+(defmodule Step
+  (doc from-array "
+    Initializes a `Step` from an array.
 
-    (defn from-array [arr]
-      (Step.init (Array.nth arr 0)
-                  0
-                  inc
-                  (fn [s] (Array.nth arr s))))
+    The `Step` concludes once the array is exhuasted.")
+  (sig from-array (Fn [(Ref (Array z))] (Step (Maybe z) (Array z))))
+  (defn from-array [arr]
+    (Step.init (Array.nth arr 0)
+               @arr
+               (fn [s] (Array.suffix s 1))
+               (fn [s] (Array.nth s 0))))
 
-    (defn runstep [step]
-      (let-do [s @(Step.state step)
-               ns (Step.newState step)
-               nv (Step.newValue step)]
-        (Step.set-state! step (~ns s))
-        (Step.set-value! step (~nv @(Step.state step)))
-        step))
+  (doc runstep "
+    Runs a `Step` to produce a new value, returning a new step.")
+  (todo runstep "TODO: use lenses?")
+  (sig runstep (Fn [(Ref (Step a s))] (Step a s)))
+  (defn runstep [step]
+    (let-do [v (Step.value step)
+             s (Step.state step)
+             ns (Step.new-state step)
+             nv (Step.new-value step)]
+      (Step.set-state! step (~ns s))
+      (Step.set-value! step (~nv s))
+      @step))
 
-    (defn map [f step]
-      (let [v @(Step.value step)
-            s @(Step.state step)
-            ns @(Step.newState step)
-            g @(Step.newValue step)]
-        (Step.init (~f v)
-                   s
-          	   ns
-                   (fn [x] (~f (g x))))))
-  )
+  (doc runstep! "
+    Runs a `Step` in place.")
+  (sig runstep! (Fn [(Ref (Step a s))] ()))
+  (defn runstep! [step]
+    (let-do [s (Step.state step)
+             v (Step.value step)
+             ns (Step.new-state step)
+             nv (Step.new-value step)]
+      (Step.set-state! step (~ns s))
+      (Step.set-value! step (~nv s))))
+
+  (doc map "
+    Maps a function `f` over a `Step`, `step`.")
+  (sig map (Fn [(Ref (Fn [a] b)) (Ref (Step a s))] (Step b s)))
+  (defn map [f step]
+    (let [s @(Step.state step) 
+          v @(Step.value step)
+          ns @(Step.new-state step)
+          nv @(Step.new-value step)]
+      (Step.init (~f v)
+                 s
+        	 ns
+                 (fn [x] (~f (nv x))))))
 )
