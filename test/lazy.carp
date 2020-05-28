@@ -37,10 +37,11 @@
     "yield returns the value of a suspended computation without evaluating it")
   (assert-equal test
     2
-    (force &(Lazy.delay inc 1))
+    (force &(Lazy.delay mod 2 4))
     "delay promotes the application of a function to a lazy computation")
   (assert-equal test
     2
-    (force &(Lazy.lazy (inc 1)))
+    ;; TODO: Once issue #849 is resolved, we can use a simpler function here.
+    (force &(Lazy.lazy (mod 2 4)))
     "lazy promotes an aribtrary form to a lazy computation")
 )

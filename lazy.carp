@@ -120,7 +120,7 @@
     => (Suspended fn)
     ```")
   (defmacro delay [f :rest arguments]
-    (let [max (take (eval (list 'Introspect.arity f)) arguments)]
+    (let [max (take (Introspect.arity (eval f)) arguments)]
       (list 'Lazy.suspend (list 'fn (array) (cons f max)))))
 
   (doc lazy "
