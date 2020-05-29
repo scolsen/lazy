@@ -13,32 +13,181 @@
 ;;  limitations under the License.
 
 (load "lazy.carp")
-(load "step.carp")
 
-(defmodule Lazy
-  (defmodule Stream
-   
-    (deftype (Stream a s) [step (Step a s)])
- 
-    (sig from-array (Fn [(Ref (Array a))] (Pair (Maybe a) (Stream (Maybe a) Int))))
-    (sig next (Fn [(Pair a (Stream b s))] (Pair b (Stream b s))))
-    (sig map (Fn [(Ref (Fn [a] b)) (Ref (Pair c (Stream a s)))] (Pair b (Stream b s))))
-  
-    (defn from-array [as]
-      (let [step (Lazy.Step.from-array as)]
-      (Pair.init @(Lazy.Step.Step.value &step)
-                 (Stream.init step))))
+(deftype (Step a s) (Done []) (Yield [a s]) (Skip [s]))
 
-    (defn next [sp]
-      (let [s (Pair.b sp)]
-        (let [side-effect! (Lazy.Step.runstep (Stream.step s))]
-         (Pair.init @(Lazy.Step.Step.value (Stream.step s))
-                    @s))))
+(defmodule Step
+  (implements = =)
+  (defn = [s s*]
+    (match s
+      (Step.Done)
+        (match s*
+          (Step.Done) true
+          _ false)
+      (Step.Skip t)
+        (match s*
+          ;; We append refs to = calls since many core types implement = for
+          ;; refs, but not for values (e.g. array, maybe).
+          ;; Most other types also have a ref = implementation (Int, etc.)
+          (Step.Skip t*) (= &t &t*)
+          _ false)
+      (Step.Yield x u)
+        (match s*
+          (Step.Yield x* u*) (and (= &x &x*) (= &u &u*))
+          _ false)))
+)
 
-    (defn map [f sp]
-      (let [s (Pair.b sp)]
-        (let [step (Stream.step s)]
-        (Pair.init (~f @(Lazy.Step.Step.value step))
-                   (Stream.init (Lazy.Step.map f step))))))
-  )
+(doc Node "
+  The type of stream values.
+
+  In order to return a safe bottom value when getting stream values, we need
+  Node to avoid having to return Step directly.")
+(deftype (Node a) (Nil []) (Node [a]))
+
+(doc Stream
+  "The type of Streams.
+
+  Streams are backed by a `Step` returning function `next` and a current
+  `state`. Stream processing functions run `next` on the current `state` to
+  yield the remainder of the stream.")
+(deftype (Stream a s) [next (Fn [(Ref s)] (Step a s)) state s])
+
+(doc Unit "
+  An opaque type representing the unit type.
+
+  Carp has a notion of unit, but it is a special value, and not exposed as a
+  type/module to the user.
+
+  Since our lazy mechanisms rely on (zero) implementations, we provide this type
+  as a standin for Carp's unit type, and implement zero on it.
+
+  So, in much of this library, places where one would normally return (), return
+  this type, Unit instead.")
+(deftype Unit Unit)
+
+(defmodule Unit
+  (implements zero zero)
+  (defn zero []
+    (Unit.Unit))
+)
+
+(defmodule Node
+  (implements zero zero)
+  (defn zero []
+    (Node.Nil))
+
+  (todo = "TODO: Update once match-ref supports wildcards `_`")
+  (implements = =)
+  (defn = [n n*]
+    (match-ref n
+      (Node.Node x)
+        (match-ref n*
+          (Node.Node y) (= x y)
+          (Node.Nil) false)
+      (Node.Nil)
+        (match-ref n*
+          (Node.Nil) true
+          (Node.Node z) false)))
+)
+
+(defmodule Stream
+  (doc zero "
+    The zero stream; comprised of a `next` that constantly returns `Step.Done`
+    and the `zero` value for the stream's `state`.")
+  (implements zero zero)
+  (defn zero []
+    (Stream.init (fn [s] (Step.Done)) (zero)))
+
+  (implements = =)
+  (defn = [s s*]
+    (let [state-one (Stream.state s)
+          state-two (Stream.state s*)
+          next-one  (Stream.next s)
+          next-two  (Stream.next s*)]
+      (and (= state-one state-two)
+           (= (~next-one state-one) (~next-two state-two)))))
+
+  (doc map "
+    Maps a function `f` over a stream, yielding a new stream.
+
+    `f` is only applied to the stream's values--the resulting stream's `state`
+    remains unchanged.")
+  (defn map [f stream]
+    (let [n (Stream.next stream)
+          s (Stream.state stream)
+          n* (fn [st] (match (~n st)
+                             (Step.Done) (Step.Done)
+                             (Step.Skip s*) (Step.Skip s*)
+                             (Step.Yield x s**) (Step.Yield (~f x) s**)))]
+      (Stream.init n* @s)))
+
+  (doc from-array "
+    Creates a stream from an array.")
+  (sig from-array (Fn [(Ref (Array b))] (Stream (Maybe b) (Array b))))
+  (defn from-array [as]
+    (let [n (fn [s] (if (= 0 (Array.length s))
+                        (Step.Done)
+                        (Step.Yield (Array.nth s 0) (Array.suffix s 1))))]
+      (Stream.init n @as)))
+
+  (doc head "
+    Returns a lazy computation that returns the first element of a stream.")
+  (sig head (Fn [(Ref (Stream x s))] (Suspended (Node x))))
+  (defn head [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (Stream.next s)
+              st (Stream.state s)]
+          (match (~nx st)
+                 (Step.Done) (Node.Nil)
+                 (Step.Skip t) (Node.Nil)
+                 (Step.Yield x u) (Node.Node x))))))
+
+  (doc tail "
+    Returns a lazy computation that returns the tail of a stream.")
+  (sig tail (Fn [(Ref (Stream x s))] (Suspended (Stream x s))))
+  (defn tail [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (Stream.next s)
+              st (Stream.state s)]
+          (match (~nx st)
+                 (Step.Done) @s
+                 (Step.Skip t) (Stream.init @nx t)
+                 (Step.Yield x u) (Stream.init @nx u))))))
+
+  (doc advance "
+    Returns a lazy computation that advances a stream in place.
+
+    ```
+    (def stream (from-array &[1 2 3]))
+    (defn runstream [s] (let [_ (force &(advance s))] s))
+    (do (runstream &stream) (runstream &stream))
+    => (Stream [2 3]) ;; memoization
+    (runstream (runstream &stream))
+    (Stream [])
+    ```")
+  (sig advance (Fn [(Ref (Stream x s))] (Suspended Unit)))
+  (defn advance [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (Stream.next s)
+              st (Stream.state s)]
+          (match (~nx st)
+                 (Step.Done) (Unit.Unit)
+                 (Step.Skip t) (do (ignore (Stream.set-state! s t)) (Unit.Unit))
+                 (Step.Yield x u) (do (ignore (Stream.set-state! s u))
+                 (Unit.Unit)))))))
+
+  (doc to-array "
+    Converts a stream to an array.")
+  (defn to-array [s]
+    (let [res (Array.zero)
+          stream @s]
+    (do (while (not (= (~(Stream.next &stream) (Stream.state &stream)) (Step.Done)))
+          (do (match (Lazy.force &(head &stream))
+                     (Node.Node x) (Array.push-back! &res x)
+                     (Node.Nil) ())
+              (set! stream (Lazy.force &(tail &stream)))))
+        res)))
 )
