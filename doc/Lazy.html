@@ -1,0 +1,263 @@
+<!DOCTYPE HTML>
+
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+        <link rel="stylesheet" href="carp_style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="logo">
+                <a href="http://github.com/carp-lang/Carp">
+                    <img src="logo.png">
+                </a>
+                <div class="title">
+                    lazy
+                </div>
+                <div class="index">
+                    <ul>
+                        <li>
+                            <a href="Lazy.html">
+                                Lazy
+                            </a>
+                        </li>
+                        <li>
+                            <a href="Stream.html">
+                                Stream
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <h1>
+                Lazy
+            </h1>
+            <div class="module-description">
+                <p>The Lazy module provides mechanisms for defining lazy computations.</p>
+
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#=">
+                    <h3 id="=">
+                        =
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Suspended a) b), (Ref (Suspended a) c)] Bool)
+                </p>
+                <pre class="args">
+                    (= s s*)
+                </pre>
+                <p class="doc">
+                    <pre><code>Returns true if the values of suspended computations are equivalent, without
+forcing evaluation.
+
+```
+(= &amp;(suspend (fn [] (+ 1 2))) &amp;(suspend (fn [] (+ 1 2))))
+=&gt; true
+(= (force &amp;(suspend (fn [] (+ 1 2)))) &amp;(suspend (fn [] (+ 1 2))))
+=&gt; false
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#Suspended">
+                    <h3 id="Suspended">
+                        Suspended
+                    </h3>
+                </a>
+                <div class="description">
+                    module
+                </div>
+                <p class="sig">
+                    Module
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>The type of lazy computations.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#delay">
+                    <h3 id="delay">
+                        delay
+                    </h3>
+                </a>
+                <div class="description">
+                    macro
+                </div>
+                <p class="sig">
+                    Macro
+                </p>
+                <pre class="args">
+                    (delay f :rest arguments)
+                </pre>
+                <p class="doc">
+                    <pre><code>Delays the application of `f` to `arguments`, returns a suspended
+computation.
+
+If `arguments` exceeds the arity of `f`, only the first n arguments 
+will be passed to f in the resulting form.
+
+```
+(delay inc 1)
+=&gt; (suspend (fn [] (inc 1)))
+(eval (delay inc 1))
+=&gt; (Suspended fn)
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#force">
+                    <h3 id="force">
+                        force
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Suspended a) b)] a)
+                </p>
+                <pre class="args">
+                    (force s)
+                </pre>
+                <p class="doc">
+                    <pre><code>Forces evaluation of a `Suspended` computation, `s`. 
+
+After a computation is forced, the resulting value is memoized. Subsequent
+calls to `force` will yield the memoized value.
+
+```
+(force &amp;(suspend (fn [] (+ 1 2))))
+=&gt; 3
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#force=">
+                    <h3 id="force=">
+                        force=
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Suspended a) b), (Ref (Suspended a) c)] Bool)
+                </p>
+                <pre class="args">
+                    (force= s s*)
+                </pre>
+                <p class="doc">
+                    <pre><code>Forces the evaluation of two suspended computations and returns true if
+their values are equivalent
+
+```
+(force= &amp;(suspend (fn [] (+ 1 2))) &amp;(suspend (fn [] (+ 1 2))))
+=&gt; true
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#lazy">
+                    <h3 id="lazy">
+                        lazy
+                    </h3>
+                </a>
+                <div class="description">
+                    macro
+                </div>
+                <p class="sig">
+                    Macro
+                </p>
+                <pre class="args">
+                    (lazy body)
+                </pre>
+                <p class="doc">
+                    <pre><code>Wraps a form `body`, in a thunk, capturing its environment, `body` in a lazy
+computation.
+
+```
+(lazy (inc 1))
+=&gt; (suspend (fn [] (inc 1)))
+(eval (lazy (inc 1)))
+=&gt; (Suspended fn)
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#suspend">
+                    <h3 id="suspend">
+                        suspend
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Fn [] a)] (Suspended a))
+                </p>
+                <pre class="args">
+                    (suspend f)
+                </pre>
+                <p class="doc">
+                    <pre><code>Suspends a computation, `f`.
+
+```
+(suspend (fn [] (+ 1 2)))
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#yield">
+                    <h3 id="yield">
+                        yield
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Suspended a) b)] a)
+                </p>
+                <pre class="args">
+                    (yield s)
+                </pre>
+                <p class="doc">
+                    <pre><code>Gets the current memoized value of a lazy computation without evaluating the
+computation.
+
+When `yield` is called before evalauating the computation, it returns
+`zero`.
+
+```
+(yield &amp;(suspend (fn [] (+ 1 2))))
+=&gt; 0
+```
+</code></pre>
+
+                </p>
+            </div>
+        </div>
+    </body>
+</html>

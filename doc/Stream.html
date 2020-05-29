@@ -1,0 +1,536 @@
+<!DOCTYPE HTML>
+
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+        <link rel="stylesheet" href="carp_style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="logo">
+                <a href="http://github.com/carp-lang/Carp">
+                    <img src="logo.png">
+                </a>
+                <div class="title">
+                    lazy
+                </div>
+                <div class="index">
+                    <ul>
+                        <li>
+                            <a href="Lazy.html">
+                                Lazy
+                            </a>
+                        </li>
+                        <li>
+                            <a href="Stream.html">
+                                Stream
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <h1>
+                Stream
+            </h1>
+            <div class="module-description">
+                <p>The type of Streams.</p>
+<p>Streams are backed by a <code>Step</code> returning function <code>next</code> and a current
+<code>state</code>. Stream processing functions run <code>next</code> on the current <code>state</code> to
+yield the remainder of the stream.</p>
+
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#=">
+                    <h3 id="=">
+                        =
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c), (Ref (Stream a b) c)] Bool)
+                </p>
+                <pre class="args">
+                    (= s s*)
+                </pre>
+                <p class="doc">
+                    
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#advance">
+                    <h3 id="advance">
+                        advance
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) StaticLifetime)] (Suspended Unit))
+                </p>
+                <pre class="args">
+                    (advance s)
+                </pre>
+                <p class="doc">
+                    <pre><code>Returns a lazy computation that advances a stream in place.
+
+```
+(def stream (from-array &amp;[1 2 3]))
+(defn runstream [s] (let [_ (force &amp;(advance s))] s))
+(do (runstream &amp;stream) (runstream &amp;stream))
+=&gt; (Stream [2 3]) ;; memoization
+(runstream (runstream &amp;stream))
+(Stream [])
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#copy">
+                    <h3 id="copy">
+                        copy
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c)] (Stream a b))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>copies the <code>Stream</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#delete">
+                    <h3 id="delete">
+                        delete
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Stream a b)] ())
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>deletes a <code>Stream</code>. Should usually not be called manually.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#from-array">
+                    <h3 id="from-array">
+                        from-array
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Array a) b)] (Stream (Maybe a) (Array a)))
+                </p>
+                <pre class="args">
+                    (from-array as)
+                </pre>
+                <p class="doc">
+                    <pre><code>Creates a stream from an array.
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#head">
+                    <h3 id="head">
+                        head
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) StaticLifetime)] (Suspended (Node a)))
+                </p>
+                <pre class="args">
+                    (head s)
+                </pre>
+                <p class="doc">
+                    <pre><code>Returns a lazy computation that returns the first element of a stream.
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#init">
+                    <h3 id="init">
+                        init
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Fn [(Ref a b)] (Step c a)), a] (Stream c a))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>creates a <code>Stream</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#map">
+                    <h3 id="map">
+                        map
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Fn [a] b) c), (Ref (Stream a d) StaticLifetime)] (Stream b d))
+                </p>
+                <pre class="args">
+                    (map f stream)
+                </pre>
+                <p class="doc">
+                    <pre><code>Maps a function `f` over a stream, yielding a new stream.
+
+`f` is only applied to the stream's values--the resulting stream's `state`
+remains unchanged.
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#next">
+                    <h3 id="next">
+                        next
+                    </h3>
+                </a>
+                <div class="description">
+                    instantiate
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c)] (Ref (Fn [(Ref b d)] (Step a b)) c))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>gets the <code>next</code> property of a <code>Stream</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#prn">
+                    <h3 id="prn">
+                        prn
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c)] String)
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>converts a <code>Stream</code> to a string.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#replace">
+                    <h3 id="replace">
+                        replace
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Fn [(Ref a b)] c) d), (Ref (Fn [(Ref c e)] (Step f c)) StaticLifetime), (Ref (Stream g a) b)] (Stream f c))
+                </p>
+                <pre class="args">
+                    (replace g h stream)
+                </pre>
+                <p class="doc">
+                    <pre><code>Replaces `stream` with a new stream by applying `g` to `stream`'s state, to
+yield a new state. The resulting stream applies `h` to process the new
+state.
+
+```
+;; replace an array-backed stream with a stream that iterates successors
+;; starting from the array's length
+(replace &amp;(fn [arr] (Array.length &amp;arr)) &amp;(fn [s] (Step.Yield @s (+ 1 @s))) (from-array &amp;[1 2 3]))
+=&gt; (Stream Fn 3)
+```
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#set-next">
+                    <h3 id="set-next">
+                        set-next
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Stream a b), (Fn [(Ref b c)] (Step a b))] (Stream a b))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>sets the <code>next</code> property of a <code>Stream</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#set-next!">
+                    <h3 id="set-next!">
+                        set-next!
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c), (Fn [(Ref b d)] (Step a b))] ())
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>sets the <code>next</code> property of a <code>Stream</code> in place.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#set-state">
+                    <h3 id="set-state">
+                        set-state
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Stream a b), b] (Stream a b))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>sets the <code>state</code> property of a <code>Stream</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#set-state!">
+                    <h3 id="set-state!">
+                        set-state!
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c), b] ())
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>sets the <code>state</code> property of a <code>Stream</code> in place.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#state">
+                    <h3 id="state">
+                        state
+                    </h3>
+                </a>
+                <div class="description">
+                    instantiate
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c)] (Ref b c))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>gets the <code>state</code> property of a <code>Stream</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#str">
+                    <h3 id="str">
+                        str
+                    </h3>
+                </a>
+                <div class="description">
+                    template
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c)] String)
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>converts a <code>Stream</code> to a string.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#tail">
+                    <h3 id="tail">
+                        tail
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) StaticLifetime)] (Suspended (Stream a b)))
+                </p>
+                <pre class="args">
+                    (tail s)
+                </pre>
+                <p class="doc">
+                    <pre><code>Returns a lazy computation that returns the tail of a stream.
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#to-array">
+                    <h3 id="to-array">
+                        to-array
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Stream a b) c)] (Array a))
+                </p>
+                <pre class="args">
+                    (to-array s)
+                </pre>
+                <p class="doc">
+                    <pre><code>Converts a stream to an array.
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#transform">
+                    <h3 id="transform">
+                        transform
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [(Ref (Fn [a] b c) d), (Ref (Fn [(Ref e f)] g c) h), (Ref (Fn [(Ref g i)] (Step a g) c) StaticLifetime), (Ref (Stream j e) f)] (Stream b g))
+                </p>
+                <pre class="args">
+                    (transform f g h stream)
+                </pre>
+                <p class="doc">
+                    <pre><code>Alters a stream's state to yield a new stream and maps a function `f` to
+that stream's values.
+</code></pre>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#update-next">
+                    <h3 id="update-next">
+                        update-next
+                    </h3>
+                </a>
+                <div class="description">
+                    instantiate
+                </div>
+                <p class="sig">
+                    (Fn [(Stream a b), (Ref (Fn [(Fn [(Ref b c)] (Step a b))] (Fn [(Ref b c)] (Step a b)) d) e)] (Stream a b))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>updates the <code>next</code> property of a <code>Stream</code> using a function <code>f</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#update-state">
+                    <h3 id="update-state">
+                        update-state
+                    </h3>
+                </a>
+                <div class="description">
+                    instantiate
+                </div>
+                <p class="sig">
+                    (Fn [(Stream a b), (Ref (Fn [b] b c) d)] (Stream a b))
+                </p>
+                <span>
+                    
+                </span>
+                <p class="doc">
+                    <p>updates the <code>state</code> property of a <code>Stream</code> using a function <code>f</code>.</p>
+
+                </p>
+            </div>
+            <div class="binder">
+                <a class="anchor" href="#zero">
+                    <h3 id="zero">
+                        zero
+                    </h3>
+                </a>
+                <div class="description">
+                    defn
+                </div>
+                <p class="sig">
+                    (Fn [] (Stream a b))
+                </p>
+                <pre class="args">
+                    (zero)
+                </pre>
+                <p class="doc">
+                    <pre><code>The zero stream; comprised of a `next` that constantly returns `Step.Done`
+and the `zero` value for the stream's `state`.
+</code></pre>
+
+                </p>
+            </div>
+        </div>
+    </body>
+</html>
