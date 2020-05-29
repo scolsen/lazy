@@ -43,5 +43,5 @@
     2
     ;; TODO: Once issue #849 is resolved, we can use a simpler function here.
     (force &(Lazy.lazy (mod 2 4)))
-    "lazy promotes an aribtrary form to a lazy computation")
+    "lazy promotes an arbitrary form to a lazy computation")
 )
