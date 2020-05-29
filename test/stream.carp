@@ -21,6 +21,8 @@
                         (Step.Done)
                         (Step.Yield (Array.nth s 0) (Array.suffix s 1)))) [1 2
                         3]))
+(defn yield-inc [s] (Step.Yield @s (inc @s)))
+(defn arr-len [arr] (Array.length arr))
 
 (deftest test
   (assert-equal test
@@ -38,7 +40,7 @@
   (assert-equal test
     &(from-array &[2 3])
     &(Lazy.force &(tail &(from-array &[1 2 3])))
-    "tail returns a lazy comutation that returns the remaining elements in a
+    "tail returns a lazy computation that returns the remaining elements in a
     stream")
   (assert-equal test
     &(from-array &[2 3])
@@ -56,4 +58,8 @@
     &(Node.Node 1)
     &(Lazy.force &(head &(map &Maybe.or-zero &(from-array &[1 2 3]))))
     "map maps a function f over a stream's values")
+  (assert-equal test
+    &(Stream.init (fn [s] (Step.Yield @s (Int.+ @s 1))) 3)
+    &(replace &arr-len &yield-inc &(from-array &[1 2 3]))
+    "replace substitutes a stream using state manipulating functions")
 )

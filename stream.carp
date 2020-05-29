@@ -44,8 +44,8 @@
   Node to avoid having to return Step directly.")
 (deftype (Node a) (Nil []) (Node [a]))
 
-(doc Stream
-  "The type of Streams.
+(doc Stream "
+  The type of Streams.
 
   Streams are backed by a `Step` returning function `next` and a current
   `state`. Stream processing functions run `next` on the current `state` to
@@ -106,20 +106,6 @@
           next-two  (Stream.next s*)]
       (and (= state-one state-two)
            (= (~next-one state-one) (~next-two state-two)))))
-
-  (doc map "
-    Maps a function `f` over a stream, yielding a new stream.
-
-    `f` is only applied to the stream's values--the resulting stream's `state`
-    remains unchanged.")
-  (defn map [f stream]
-    (let [n (Stream.next stream)
-          s (Stream.state stream)
-          n* (fn [st] (match (~n st)
-                             (Step.Done) (Step.Done)
-                             (Step.Skip s*) (Step.Skip s*)
-                             (Step.Yield x s**) (Step.Yield (~f x) s**)))]
-      (Stream.init n* @s)))
 
   (doc from-array "
     Creates a stream from an array.")
@@ -190,4 +176,44 @@
                      (Node.Nil) ())
               (set! stream (Lazy.force &(tail &stream)))))
         res)))
+
+  (doc transform "
+    Alters a stream's state to yield a new stream and maps a function `f` to
+    that stream's values.")
+  (defn transform [f g h stream]
+    (let [n (Stream.next stream)
+          s (Stream.state stream)
+          ;; When f is passed by reference from a parent context, e.g. replace
+          ;; or map the emitted c code sometimes loses track of the reference in the n*
+          ;; lambda.
+          ;; we copy it here for safety.
+          f* @f
+          n* (fn [st] (match (~h st)
+                             (Step.Done) (Step.Done)
+                             (Step.Skip s*) (Step.Skip s*)
+                             (Step.Yield x s**) (Step.Yield (f* x) s**)))]
+      (Stream.init n* (~g s))))
+
+  (doc replace "
+    Replaces `stream` with a new stream by applying `g` to `stream`'s state, to
+    yield a new state. The resulting stream applies `h` to process the new
+    state.
+
+    ```
+    ;; replace an array-backed stream with a stream that iterates successors
+    ;; starting from the array's length
+    (replace &(fn [arr] (Array.length &arr)) &(fn [s] (Step.Yield @s (+ 1 @s))) (from-array &[1 2 3]))
+    => (Stream Fn 3)
+    ```")
+  (defn replace [g h stream]
+    (Stream.transform &id g h stream))
+
+  (doc map "
+    Maps a function `f` over a stream, yielding a new stream.
+
+    `f` is only applied to the stream's values--the resulting stream's `state`
+    remains unchanged.")
+  (defn map [f stream]
+    (let [n (Stream.next stream)]
+      (Stream.transform f &copy n stream)))
 )
