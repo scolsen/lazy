@@ -66,4 +66,8 @@
     &(Stream.init (fn [s] (Step.Yield (+ 1 @s) (Int.+ @s 1))) 3)
     &(transform &(fn [x] (+ 1 x)) &arr-len &yield-inc &(from-array &[1 2 3]))
     "transform replaces a stream and maps a function f to the values of the new stream")
+  (assert-equal test
+    &(Lazy.force &(head &(Stream.init (fn [x] (Step.Yield (Maybe.Just 2) @x)) 2)))
+    &(Lazy.force &(head &(filter (fn [x] (= &(Maybe.Just 2) x)) &(Stream.from-array &[1 2 3]))))
+    "filter returns a filtered stream")
 )

@@ -37,6 +37,14 @@
         (match s*
           (Step.Yield x* u*) (and (= &x &x*) (= &u &u*))
           _ false)))
+
+  (doc skip? "
+    Returns true if `step` is a `Skip`.")
+  (sig skip? (Fn [(Step a s)] Bool))
+  (defn skip? [step]
+      (match step
+        (Step.Skip s) true
+        _ false))
 )
 
 (doc Node "
@@ -122,33 +130,7 @@
                         (Step.Yield (Array.nth s 0) (Array.suffix s 1))))]
       (Stream.init n @as)))
 
-  (doc head "
-    Returns a lazy computation that returns the first element of a stream.")
-  (sig head (Fn [(Ref (Stream x s))] (Suspended (Node x))))
-  (defn head [s]
-    (Lazy.suspend
-      (fn []
-        (let [nx (Stream.next s)
-              st (Stream.state s)]
-          (match (~nx st)
-                 (Step.Done) (Node.Nil)
-                 (Step.Skip t) (Node.Nil)
-                 (Step.Yield x u) (Node.Node x))))))
-
-  (doc tail "
-    Returns a lazy computation that returns the tail of a stream.")
-  (sig tail (Fn [(Ref (Stream x s))] (Suspended (Stream x s))))
-  (defn tail [s]
-    (Lazy.suspend
-      (fn []
-        (let [nx (Stream.next s)
-              st (Stream.state s)]
-          (match (~nx st)
-                 (Step.Done) @s
-                 (Step.Skip t) (Stream.init @nx t)
-                 (Step.Yield x u) (Stream.init @nx u))))))
-
-  (doc advance "
+(doc advance "
     Returns a lazy computation that advances a stream in place.
 
     ```
@@ -170,6 +152,51 @@
                  (Step.Skip t) (do (ignore (Stream.set-state! s t)) (Unit.Unit))
                  (Step.Yield x u) (do (ignore (Stream.set-state! s u))
                  (Unit.Unit)))))))
+
+(doc !advance "
+    Advances a stream in place eagerly.
+
+    ```
+    (def stream (from-array &[1 2 3]))
+    (do (!advance &stream) (!advance &stream) stream)
+    => (Stream [3])
+    ```")
+  (sig !advance (Fn [(Ref (Stream x s))] ()))
+  (defn !advance [s]
+    (let [nx (Stream.next s)
+          st (Stream.state s)]
+      (match (~nx st)
+             (Step.Done) ()
+             (Step.Skip t) (Stream.set-state! s t)
+             (Step.Yield x u) (Stream.set-state! s u))))
+
+  (doc head "
+    Returns a lazy computation that returns the first element of a stream.")
+  (sig head (Fn [(Ref (Stream x s))] (Suspended (Node x))))
+  (defn head [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (Stream.next s)
+              st (Stream.state s)]
+          (do
+            (while (Step.skip? (~nx (Stream.state s)))
+              (Stream.!advance s))
+            (match (~nx (Stream.state s))
+                   (Step.Yield x u) (Node.Node x)
+                   _ (Node.Nil)))))))
+
+  (doc tail "
+    Returns a lazy computation that returns the tail of a stream.")
+  (sig tail (Fn [(Ref (Stream x s))] (Suspended (Stream x s))))
+  (defn tail [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (Stream.next s)
+              st (Stream.state s)]
+          (match (~nx st)
+                 (Step.Done) @s
+                 (Step.Skip t) (Stream.init @nx t)
+                 (Step.Yield x u) (Stream.init @nx u))))))
 
   (doc to-array "
     Converts a stream to an array.")
@@ -222,4 +249,41 @@
   (defn map [f stream]
     (let [n (Stream.next stream)]
       (Stream.transform f &copy n stream)))
+
+  (doc filter "
+    Given a Stream `stream` and a predicate `p`, returns a new Stream
+    that only contains elements that satisfy `p`.")
+  (defn filter [p stream]
+    (let [n (Stream.next stream)
+          s (Stream.state stream)
+          n* (fn [s] (match (~n s)
+                            (Step.Done) (Step.Done)
+                            (Step.Skip s*) (Step.Skip s*)
+                            (Step.Yield x s**) (if (p &x)
+                                                   (Step.Yield x s**)
+                                                   (Step.Skip s**))))]
+      (Stream.init n* @s)))
+
+  (doc range "
+    Returns a stream of a range of values from `start` to `finish`.
+
+    The arguments to this function must implement `inc`.
+
+    ```
+    (range 0 10)
+    => (Stream Fn 0)
+    (force &(head &(range 0 10)))
+    => 0
+    (force &(tail &(range 0 10)))
+    => (Stream Fn 1)
+    (force &(tail &(tail &(range 0 10))))
+    => (Stream Fn 2)
+    ```")
+  (todo range "TODO: add a unit test for range")
+  (sig range (Fn [a a] (Stream a a)))
+  (defn range [start finish]
+    (let [n (fn [s] (if (> @s finish)
+                        (Step.Done)
+                        (Step.Yield @s (inc @s))))]
+    (Stream.init n start)))
 )
