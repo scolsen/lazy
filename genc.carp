@@ -12,7 +12,7 @@
 ;;  See the License for the specific language governing permissions and
 ;;  limitations under the License.
 
-(load "lazy.carp")
+(load "src/lazy.carp")
 
 (Project.config "title" "lazy")
 (Project.config "output-directory" "c")

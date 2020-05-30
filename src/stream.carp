@@ -12,8 +12,10 @@
 ;;  See the License for the specific language governing permissions and
 ;;  limitations under the License.
 
-(load "lazy.carp")
+(load "src/lazy.carp")
 
+(doc Step "
+  The Step type is the backing model for processing streams.")
 (deftype (Step a s) (Done []) (Yield [a s]) (Skip [s]))
 
 (defmodule Step
@@ -59,19 +61,23 @@
   type/module to the user.
 
   Since our lazy mechanisms rely on (zero) implementations, we provide this type
-  as a standin for Carp's unit type, and implement zero on it.
+  as a stand-in for Carp's unit type, and implement zero on it.
 
   So, in much of this library, places where one would normally return (), return
   this type, Unit instead.")
 (deftype Unit Unit)
 
 (defmodule Unit
+  (doc zero "
+    Returns the opaque type, `Unit`.")
   (implements zero zero)
   (defn zero []
     (Unit.Unit))
 )
 
 (defmodule Node
+  (doc zero "
+    Returns the Nil node.")
   (implements zero zero)
   (defn zero []
     (Node.Nil))
@@ -186,7 +192,7 @@
           ;; When f is passed by reference from a parent context, e.g. replace
           ;; or map the emitted c code sometimes loses track of the reference in the n*
           ;; lambda.
-          ;; we copy it here for safety.
+          ;; We copy it here for safety.
           f* @f
           n* (fn [st] (match (~h st)
                              (Step.Done) (Step.Done)

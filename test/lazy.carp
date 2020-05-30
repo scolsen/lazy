@@ -13,9 +13,9 @@
 ;;  limitations under the License.
 
 (load "Test.carp")
-(load "../lazy.carp")
-(use Test)
-(use Lazy)
+(load "src/lazy.carp")
+
+(use-all Test Lazy)
 
 (deftest test
   (assert-equal test

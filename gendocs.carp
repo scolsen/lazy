@@ -12,8 +12,8 @@
 ;;  See the License for the specific language governing permissions and
 ;;  limitations under the License.
 
-(load "lazy.carp")
-(load "stream.carp")
+(load "src/lazy.carp")
+(load "src/stream.carp")
 
 (Project.config "title" "lazy")
 (Project.config "docs-directory" "doc/")
