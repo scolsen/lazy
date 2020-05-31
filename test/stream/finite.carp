@@ -13,7 +13,7 @@
 ;;  limitations under the License.
 
 (load "Test.carp")
-(load "src/stream/stream.carp")
+(load "src/stream.carp")
 
 (use-all Test Stream)
 
@@ -21,6 +21,8 @@
                         (Step.Done)
                         (Step.Yield (Array.nth &s 0) (Array.suffix &s 1)))) [1 2
                         3]))
+
+(def ranged (range 0 10))
 
 (deftest test
   (assert-equal test
@@ -39,4 +41,8 @@
     &(Node.Node (Maybe.Just 3))
     &(Lazy.force &(last &(from-array &[1 2 3])))
     "last returns the last element of a stream (before nil)")
+  (assert-equal test
+    &(Node.Nil)
+    &(do (for [i 0 11] (!advance &ranged)) (Lazy.force &(head &ranged)))
+    "range generates a bounded stream of values")
 )

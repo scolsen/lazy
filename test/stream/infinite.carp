@@ -13,7 +13,7 @@
 ;;  limitations under the License.
 
 (load "Test.carp")
-(load "src/stream/stream.carp")
+(load "src/stream.carp")
 
 (use-all Test Stream InfiniteStream)
 
