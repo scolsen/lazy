@@ -17,9 +17,11 @@
 
 (use-all Test Stream InfiniteStream)
 
+(def incstream (increment 0))
+
 (deftest test
   (assert-equal test
-    "TODO"
-    "Implement tests"
-    "TODO: Add tests")
+    &(Node.Node 2000)
+    &(do (for [i 0 2000] (!advance &incstream)) (Lazy.force &(head &incstream)))
+    "increment generates an infinite stream of successive values")
 )
