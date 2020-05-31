@@ -1,0 +1,154 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(load "src/stream/node.carp")
+(load "src/stream/unit.carp")
+
+(defmodule Stream
+  (doc advance "
+      Returns a lazy computation that advances a stream in place.
+
+      ```
+      (def stream (from-array &[1 2 3]))
+      (defn runstream [s] (let [_ (force &(advance s))] s))
+      (do (runstream &stream) (runstream &stream))
+      => (Stream [2 3]) ;; memoization
+      (runstream (runstream &stream))
+      (Stream [])
+      ```")
+  (sig advance (Fn [(Ref (stream x s))] (Suspended Unit)))
+  (defn advance [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (get-next s)
+              st (get-state s)]
+          (match (nx st)
+                 (Step.Done) (Unit.Unit)
+                 (Step.Skip t) (do (ignore (new-state! s t)) (Unit.Unit))
+                 (Step.Yield x u) (do (ignore (new-state! s u))
+                 (Unit.Unit)))))))
+
+  (doc !advance "
+      Advances a stream in place eagerly.
+
+      ```
+      (def stream (from-array &[1 2 3]))
+      (do (!advance &stream) (!advance &stream) stream)
+      => (Stream [3])
+      ```")
+  (sig !advance (Fn [(Ref (stream x s))] ()))
+  (defn !advance [s]
+    (let [nx (get-next s)
+          st (get-state s)]
+      (match (nx st)
+             (Step.Done) ()
+             (Step.Skip t) (new-state! s t)
+             (Step.Yield x u) (new-state! s u))))
+
+  (doc head "
+    Returns a lazy computation that returns the first element of a stream.")
+  (sig head (Fn [(Ref (stream x s))] (Suspended (Node x))))
+  (defn head [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (get-next s)
+              st (get-state s)]
+          (do
+            (while (Step.skip? (nx (get-state s)))
+              (!advance s))
+            (match (nx (get-state s))
+                   (Step.Yield x u) (Node.Node x)
+                   _ (Node.Nil)))))))
+
+  (doc tail "
+    Returns a lazy computation that returns the tail of a stream.")
+  (sig tail (Fn [(Ref (stream x s))] (Suspended (stream x s))))
+  (defn tail [s]
+    (Lazy.suspend
+      (fn []
+        (let [nx (get-next s)
+              st (get-state s)]
+          (match (nx st)
+                 (Step.Done) @s
+                 (Step.Skip t) (stream nx t)
+                 (Step.Yield x u) (stream nx u))))))
+
+  ;; TODO: This should work, and is sufficient to define replace, map, etc.
+  ;; however, Carp currently reports a non-exhaustive match for this function,
+  ;; though it's not clear why.
+  ;(doc transform "
+  ;  Alters a stream's state to yield a new stream and maps a function `f` to
+  ;  that stream's values.")
+  ;(sig transform (Fn [(Ref (Fn [a] b)) (Ref (Fn [s] t)) (Ref (Fn [t] (Step a t))) (Ref (stream q s))] (stream b t)))
+  ;(defn transform [f g h strm]
+  ;  ;; When f is passed by reference from a parent context, e.g. replace
+  ;  ;; or map the emitted c code sometimes loses track of the reference in the n*
+  ;  ;; lambda.
+  ;  ;; We copy it here for safety.
+  ;  (let [n (get-next strm)
+  ;        s (get-state strm)
+  ;        f* @f
+  ;        n* (fn [st] (match (~h st)
+  ;                           (Step.Done) (Step.Done)
+  ;                           (Step.Skip s*) (Step.Skip s*)
+  ;                           (Step.Yield x s**) (Step.Yield (f* x) s**)))]
+  ;    (stream n* (~g s))))
+
+  (doc replace "
+    Replaces `stream` with a new stream by applying `g` to `stream`'s state, to
+    yield a new state. The resulting stream applies `h` to process the new
+    state.
+
+    ```
+    ;; replace an array-backed stream with a stream that iterates successors
+    ;; starting from the array's length
+    (replace &(fn [arr] (Array.length &arr)) &(fn [s] (Step.Yield @s (+ 1 @s))) (from-array &[1 2 3]))
+    => (Stream Fn 3)
+    ```")
+  (sig replace (Fn [(Ref (Fn [a] b)) (Ref (Fn [b] (Step e b))) (Ref (stream g a))] (stream e b)))
+  (defn replace [g h strm]
+    (let [s (get-state strm)
+          n* (fn [st] (~h st))]
+      (stream n* (~g s))))
+
+  (doc map "
+    Maps a function `f` over a stream, yielding a new stream.
+
+    `f` is only applied to the stream's values--the resulting stream's `state`
+    remains unchanged.")
+  (sig map (Fn [(Ref (Fn [a] b)) (Ref (stream a s))] (stream b s)))
+  (defn map [f strm]
+    (let [n (get-next strm)
+          s (get-state strm)
+          n* (fn [st] (match (n st)
+                             (Step.Done) (Step.Done)
+                             (Step.Skip s*) (Step.Skip s*)
+                             (Step.Yield x s**) (Step.Yield (~f x) s**)))]
+      (stream n* s)))
+
+  (doc filter "
+    Given a Stream `stream` and a predicate `p`, returns a new Stream
+    that only contains elements that satisfy `p`.")
+  (sig filter (Fn [(Fn [(Ref a)] Bool) (Ref (stream a s))] (stream a s)))
+  (defn filter [p strm]
+    (let [n (get-next strm)
+          s (get-state strm)
+          n* (fn [s] (match (n s)
+                            (Step.Done) (Step.Done)
+                            (Step.Skip s*) (Step.Skip s*)
+                            (Step.Yield x s**) (if (p &x)
+                                                   (Step.Yield x s**)
+                                                   (Step.Skip s**))))]
+      (stream n* s)))
+)

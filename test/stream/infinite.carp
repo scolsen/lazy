@@ -12,5 +12,14 @@
 ;;  See the License for the specific language governing permissions and
 ;;  limitations under the License.
 
-(load-once "src/stream/finite.carp")
-(load-once "src/stream/infinite.carp")
+(load "Test.carp")
+(load "src/stream/stream.carp")
+
+(use-all Test Stream InfiniteStream)
+
+(deftest test
+  (assert-equal test
+    "TODO"
+    "Implement tests"
+    "TODO: Add tests")
+)

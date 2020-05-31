@@ -1,0 +1,46 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(doc Step "
+  The Step type is the backing model for processing streams.")
+(deftype (Step a s) (Done []) (Yield [a s]) (Skip [s]))
+
+(defmodule Step
+  (implements = =)
+  (defn = [s s*]
+    (match s
+      (Step.Done)
+        (match s*
+          (Step.Done) true
+          _ false)
+      (Step.Skip t)
+        (match s*
+          ;; We append refs to = calls since many core types implement = for
+          ;; refs, but not for values (e.g. array, maybe).
+          ;; Most other types also have a ref = implementation (Int, etc.)
+          (Step.Skip t*) (= &t &t*)
+          _ false)
+      (Step.Yield x u)
+        (match s*
+          (Step.Yield x* u*) (and (= &x &x*) (= &u &u*))
+          _ false)))
+
+  (doc skip? "
+    Returns true if `step` is a `Skip`.")
+  (sig skip? (Fn [(Step a s)] Bool))
+  (defn skip? [step]
+      (match step
+        (Step.Skip s) true
+        _ false))
+)

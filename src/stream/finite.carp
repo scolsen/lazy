@@ -1,0 +1,97 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(load "src/lazy.carp")
+(load "src/stream/node.carp")
+(load "src/stream/step.carp")
+(load "src/stream/interface.carp")
+(load "src/stream/generic.carp")
+
+(defmodule Stream
+  (doc zero "
+    The zero stream; comprised of a `next` that constantly returns `Step.Done`
+    and the `zero` value for the stream's `state`.")
+  (implements zero zero)
+  (defn zero []
+    (Stream.init (fn [s] (Step.Done)) (zero)))
+
+  (implements = =)
+  (defn = [s s*]
+    (let [state-one (Stream.state s)
+          state-two (Stream.state s*)
+          next-one  (Stream.next s)
+          next-two  (Stream.next s*)]
+      (and (= state-one state-two)
+           (= (~next-one @state-one) (~next-two @state-two)))))
+
+  (doc from-array "
+    Creates a stream from an array.")
+  (sig from-array (Fn [(Ref (Array b))] (Stream (Maybe b) (Array b))))
+  (defn from-array [as]
+    (let [n (fn [s] (if (= 0 (Array.length &s))
+                        (Step.Done)
+                        (Step.Yield (Array.nth &s 0) (Array.suffix &s 1))))]
+      (Stream.init n @as)))
+
+  (doc to-array "
+    Converts a stream to an array.")
+  (defn to-array [s]
+    (let [res (Array.zero)
+          stream @s]
+    (do (while (not (= (~(Stream.next &stream) @(Stream.state &stream)) (Step.Done)))
+          (do (match (Lazy.force &(head &stream))
+                     (Node.Node x) (Array.push-back! &res x)
+                     (Node.Nil) ())
+              (set! stream (Lazy.force &(tail &stream)))))
+        res)))
+
+  (doc last "
+    Returns a lazy computation that returns the last element of a stream.")
+  (sig last (Fn [(Ref (Stream x s))] (Suspended (Node x))))
+  (defn last [s]
+    (Lazy.suspend
+      (fn []
+        (let [n (get-next s)
+              x (n (get-state s))]
+          (do
+            (while-do (not (= (Step.Done) (n (get-state s))))
+              (set! x (n (get-state s)))
+              (!advance s))
+            (match x
+                   (Step.Yield y t) (Node.Node y)
+                   _ (Node.Nil)))))))
+
+  (doc range "
+    Returns a stream of a range of values from `start` to `finish`.
+
+    The arguments to this function must implement `inc`.
+
+    ```
+    (range 0 10)
+    => (Stream Fn 0)
+    (force &(head &(range 0 10)))
+    => 0
+    (force &(tail &(range 0 10)))
+    => (Stream Fn 1)
+    (force &(tail &(tail &(range 0 10))))
+    => (Stream Fn 2)
+    ```")
+  (todo range "TODO: add a unit test for range")
+  (sig range (Fn [a a] (Stream a a)))
+  (defn range [start finish]
+    (let [n (fn [s] (if (> s finish)
+                        (Step.Done)
+                        (Step.Yield s (inc s))))]
+    (Stream.init n start)))
+)

@@ -25,7 +25,7 @@
   (assert-equal test
     3
     (force &(suspend (fn [] (+ 1 2))))
-    "force forces evalaution of a lazy computation")
+    "force forces evaluation of a lazy computation")
   (assert-equal test
     3
     (do (ignore (force &(suspend (fn [] (+ 1 2)))))

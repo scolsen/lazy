@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 # Run all unit tests (using the test suite)
-for f in ./test/*.carp; do
+for f in ./test/**/*.carp; do
     echo $f
     carp -x --log-memory $f
     echo

@@ -1,0 +1,82 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(load "src/stream/step.carp")
+
+;; Stream interfaces. All streams implement these interfaces,
+;; which are usually just aliases to type getters and setters.
+;; TODO: Docing interfaces causes hangs #842
+;(doc get-state "
+;  Given a stream, returns its current state.")
+(definterface get-state (Fn [(Ref (stream a s))] s))
+;(doc get-next "
+;  Given a stream, returns its next function (a function for computing the next `Step` in the stream).")
+(definterface get-next (Fn [(Ref (stream a s))] (Fn [s] (Step a s))))
+;(doc new-state! "
+;  Given a stream, updates its current state to a new state `s`.")
+(definterface new-state! (Fn [(Ref (stream a s)) s] ()))
+;(doc stream "
+;  Initializes a new stream from a state `s` and a function that computes a `Step` from a state.")
+(definterface stream (Fn [(Fn [s] (Step a s)) s] (stream a s)))
+
+;; Stream interface implementations
+;; It's a little odd, but defining types/implementations here simplifies loading orders.
+(doc Stream "
+  The type of Streams.
+
+  Streams are backed by a `Step` returning function `next` and a current
+  `state`. Stream processing functions run `next` on the current `state` to
+  yield the remainder of the stream.")
+(deftype (Stream a s) [next (Fn [s] (Step a s)) state s])
+
+(defmodule Stream
+  (implements get-state state-)
+  (defn state- [s]
+    @(Stream.state s))
+
+  (implements get-next next-)
+  (defn next- [s]
+    @(Stream.next s))
+
+  (implements new-state! set-state-)
+  (defn set-state- [strm s]
+    (Stream.set-state! strm s))
+
+  (implements stream init-)
+  (defn init- [f s]
+    (Stream.init f s))
+)
+
+(doc InfiniteStream "
+  The type of infinite streams.")
+(deftype (InfiniteStream a s) [next (Fn [s] (Step a s)) state s])
+
+;; Stream interface implementations
+(defmodule InfiniteStream
+  (implements get-state state-)
+  (defn state- [s]
+    @(InfiniteStream.state s))
+
+  (implements get-next next-)
+  (defn next- [s]
+    @(InfiniteStream.next s))
+
+  (implements new-state! set-state-)
+  (defn set-state- [strm s]
+    (InfiniteStream.set-state! strm s))
+
+  (implements stream init-)
+  (defn init- [f s]
+    (InfiniteStream.init f s))
+)

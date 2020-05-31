@@ -1,0 +1,41 @@
+;; Copyright 2020 Google LLC
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;  https://www.apache.org/licenses/LICENSE-2.0
+;;
+;;  Unless required by applicable law or agreed to in writing, software
+;;  distributed under the License is distributed on an "AS IS" BASIS,
+;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;;  See the License for the specific language governing permissions and
+;;  limitations under the License.
+
+(doc Node "
+  The type of stream values.
+
+  In order to return a safe bottom value when getting stream values, we need
+  Node to avoid having to return Step directly.")
+(deftype (Node a) (Nil []) (Node [a]))
+
+(defmodule Node
+  (doc zero "
+    Returns the Nil node.")
+  (implements zero zero)
+  (defn zero []
+    (Node.Nil))
+
+  (todo = "TODO: Update once match-ref supports wildcards `_`")
+  (implements = =)
+  (defn = [n n*]
+    (match-ref n
+      (Node.Node x)
+        (match-ref n*
+          (Node.Node y) (= x y)
+          (Node.Nil) false)
+      (Node.Nil)
+        (match-ref n*
+          (Node.Nil) true
+          (Node.Node z) false)))
+)

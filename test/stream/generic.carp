@@ -13,26 +13,18 @@
 ;;  limitations under the License.
 
 (load "Test.carp")
-(load "src/stream.carp")
+(load "src/stream/stream.carp")
 
-(use-all Test Stream)
+(use-all Test Stream InfiniteStream)
 
-(def strm (Stream.init (fn [s] (if (= 0 (Array.length s))
+(def strm (Stream.init (fn [s] (if (= 0 (Array.length &s))
                         (Step.Done)
-                        (Step.Yield (Array.nth s 0) (Array.suffix s 1)))) [1 2
+                        (Step.Yield (Array.nth &s 0) (Array.suffix &s 1)))) [1 2
                         3]))
-(defn yield-inc [s] (Step.Yield @s (inc @s)))
-(defn arr-len [arr] (Array.length arr))
+(defn yield-inc [s] (Step.Yield s (inc s)))
+(defn arr-len [arr] (Array.length &arr))
 
 (deftest test
-  (assert-equal test
-    &(Stream.init (fn [s] (the (Step Int Int) (Step.Done))) 0)
-    (the (Ref (Stream Int Int)) &(Stream.zero))
-    "zero initializes a finished stream")
-  (assert-equal test
-    &strm
-    &(from-array &[1 2 3])
-    "from-array initializes a stream from an array")
   (assert-equal test
     &(Node.Node (Maybe.Just 1))
     &(Lazy.force &(head &(from-array &[1 2 3])))
@@ -47,27 +39,19 @@
     &(do (ignore (Lazy.force &(advance &strm))) @&strm)
     "advance returns a lazy computation that advances a stream in place")
   (assert-equal test
-    &[(Maybe.Just 1) (Maybe.Just 2)]
-    &(to-array &(from-array &[1 2]))
-    "to-array converts a stream to an array")
-  (assert-equal test
-    &[(Maybe.Just 1) (Maybe.Just 2)]
-    &(to-array &(from-array &[1 2]))
-    "to-array converts a stream to an array")
-  (assert-equal test
     &(Node.Node 1)
     &(Lazy.force &(head &(map &Maybe.or-zero &(from-array &[1 2 3]))))
     "map maps a function f over a stream's values")
   (assert-equal test
-    &(Stream.init (fn [s] (Step.Yield @s (Int.+ @s 1))) 3)
+    &(Stream.init (fn [s] (Step.Yield s (Int.+ s 1))) 3)
     &(replace &arr-len &yield-inc &(from-array &[1 2 3]))
     "replace substitutes a stream using state manipulating functions")
   (assert-equal test
-    &(Stream.init (fn [s] (Step.Yield (+ 1 @s) (Int.+ @s 1))) 3)
-    &(transform &(fn [x] (+ 1 x)) &arr-len &yield-inc &(from-array &[1 2 3]))
-    "transform replaces a stream and maps a function f to the values of the new stream")
-  (assert-equal test
-    &(Lazy.force &(head &(Stream.init (fn [x] (Step.Yield (Maybe.Just 2) @x)) 2)))
+    &(Lazy.force &(head &(Stream.init (fn [x] (Step.Yield (Maybe.Just 2) x)) 2)))
     &(Lazy.force &(head &(filter (fn [x] (= &(Maybe.Just 2) x)) &(Stream.from-array &[1 2 3]))))
     "filter returns a filtered stream")
+  ;(assert-equal test
+  ;  &(Stream.init (fn [s] (Step.Yield (+ 1 s) (Int.+ s 1))) 3)
+  ;  &(transform &(fn [x] (+ 1 x)) &arr-len &yield-inc &(from-array &[1 2 3]))
+  ;  "transform replaces a stream and maps a function f to the values of the new stream")
 )
