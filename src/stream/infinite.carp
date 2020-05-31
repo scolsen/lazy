@@ -35,4 +35,25 @@
   (defn increment [start]
     (let [n (fn [s] (Step.Yield s (inc s)))]
       (InfiniteStream.init n start)))
+
+  (doc repeat "
+    Returns an infinite stream of a constant value, `x`.")
+  (defn repeat [x]
+    (let [n (fn [s] (Step.Yield s s))]
+      (InfiniteStream.init n x)))
+
+  (doc loop "
+    Returns an infinite stream that continually executes a nullary function `f`,
+    keeping track of the number of executions as its state.")
+  (defn loop [f]
+    (let [n (fn [s] (Step.Yield (f) (+ 1 s)))]
+      (InfiniteStream.init n 0)))
+
+  (doc loop-with "
+    Returns an infinite stream that continually executes a unary function `f`.
+    First applies f to `s`, which serves as the starting state of the stream,
+    then applies `f` to the result of the last application.")
+  (defn loop-with [f s]
+      (let [n (fn [st] (let [v (f st)] (Step.Yield v @&v)))]
+        (InfiniteStream.init n s)))
 )

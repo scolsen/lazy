@@ -18,10 +18,30 @@
 (use-all Test Stream InfiniteStream)
 
 (def incstream (increment 0))
+(def repeat-stream (repeat 1))
+;; () can not be used as a member type
+(def loop-stream (loop (fn [] (do (IO.println "looping") (Unit.Unit)))))
+(def loop-with-stream (loop-with (fn [s] (do (IO.println &(String.concat &[@"count " (str s)])) (+ 1 s)))
+                                  0))
 
 (deftest test
   (assert-equal test
     &(Node.Node 2000)
     &(do (for [i 0 2000] (!advance &incstream)) (Lazy.force &(head &incstream)))
     "increment generates an infinite stream of successive values")
+  (assert-equal test
+      &(Node.Node 1)
+      &(do (for [i 0 2000] (!advance &repeat-stream)) (Lazy.force &(head &repeat-stream)))
+      "repeat generates an infinite stream of a constant value")
+   ;; TODO: This test is manually verified via output
+   ;; is there a better way?
+   ;; also note that these two tests will race.
+   (assert-equal test
+     &(Node.Node (Unit.Unit))
+     &(do (for [i 0 10] (!advance &loop-stream)) (Lazy.force &(head &loop-stream)))
+     "loop generates an infinite stream that continually applies a function")
+   (assert-equal test
+     &(Node.Node (Unit.Unit))
+     &(do (for [i 0 11] (!advance &loop-with-stream)) (Lazy.force &(head &loop-stream)))
+     "loop-with generates an infinite stream that continually applies a function to successive states")
 )

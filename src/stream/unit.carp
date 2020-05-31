@@ -31,4 +31,9 @@
   (implements zero zero)
   (defn zero []
     (Unit.Unit))
+
+  (implements = =)
+  (sig = (Fn [(Ref Unit) (Ref Unit)] Bool))
+  (defn = [u u*]
+    true)
 )
