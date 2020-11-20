@@ -34,10 +34,9 @@
         (let [nx (get-next s)
               st (get-state s)]
           (match (nx st)
-                 (Step.Done) (Unit.Unit)
-                 (Step.Skip t) (do (ignore (new-state! s t)) (Unit.Unit))
-                 (Step.Yield x u) (do (ignore (new-state! s u))
-                 (Unit.Unit)))))))
+                 (Step.Done) ()
+                 (Step.Skip t) (new-state! s t)
+                 (Step.Yield x u) (new-state! s u))))))
 
   (doc !advance "
       Advances a stream in place eagerly.

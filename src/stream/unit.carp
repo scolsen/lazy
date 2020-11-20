@@ -12,26 +12,8 @@
 ;;  See the License for the specific language governing permissions and
 ;;  limitations under the License.
 
-(doc Unit "
-  An opaque type representing the unit type.
-
-  Carp has a notion of unit, but it is a special value, and not exposed as a
-  type/module to the user.
-
-  Since our lazy mechanisms rely on (zero) implementations, we provide this type
-  as a stand-in for Carp's unit type, and implement zero on it.
-
-  So, in much of this library, places where one would normally return (), return
-  this type, Unit instead.")
-(deftype Unit Unit)
-
+;; Defines equality over Unit values
 (defmodule Unit
-  (doc zero "
-    Returns the opaque type, `Unit`.")
-  (implements zero zero)
-  (defn zero []
-    (Unit.Unit))
-
   (implements = =)
   (sig = (Fn [(Ref Unit) (Ref Unit)] Bool))
   (defn = [u u*]

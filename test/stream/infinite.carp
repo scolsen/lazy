@@ -19,8 +19,7 @@
 
 (def incstream (increment 0))
 (def repeat-stream (repeat 1))
-;; () can not be used as a member type
-(def loop-stream (loop (fn [] (do (IO.println "looping") (Unit.Unit)))))
+(def loop-stream (loop (fn [] (IO.println "looping"))))
 (def loop-with-stream (loop-with (fn [s] (do (IO.println &(String.concat &[@"count " (str s)])) (+ 1 s)))
                                   0))
 
@@ -37,11 +36,11 @@
    ;; is there a better way?
    ;; also note that these two tests will race.
    (assert-equal test
-     &(Node.Node (Unit.Unit))
+     &(Node.Node ())
      &(do (for [i 0 10] (!advance &loop-stream)) (Lazy.force &(head &loop-stream)))
      "loop generates an infinite stream that continually applies a function")
    (assert-equal test
-     &(Node.Node (Unit.Unit))
+     &(Node.Node ())
      &(do (for [i 0 11] (!advance &loop-with-stream)) (Lazy.force &(head &loop-stream)))
      "loop-with generates an infinite stream that continually applies a function to successive states")
 )
