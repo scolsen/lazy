@@ -20,14 +20,14 @@
   (private Lazy-Computation)
   (hidden Lazy-Computation)
   (deftype (Lazy-Computation a) [evaluated? Bool, value a, thunk (Fn [] a)])
- 
+
   (doc lazy-computation
     "Initializes a lazy computation from a thunk, `f`.")
   (private lazy-computation)
   (hidden lazy-computation)
   (defn lazy-computation [f]
     (let [l (Lazy-Computation.init false (zero) f)]
-      (fn [evaluate?] 
+      (fn [evaluate?]
         (if evaluate?
              (if @(Lazy-Computation.evaluated? &l)
                  @(Lazy-Computation.value &l)
@@ -46,7 +46,7 @@
     ```
     (suspend (fn [] (+ 1 2)))
     ```")
-  (sig suspend (Fn [(Fn [] a)] (Suspended a)))
+  (sig suspend (Fn [(Fn [] a)] (Lazy.Suspended a)))
   (defn suspend [f]
     (Lazy.Suspended.init (Lazy.lazy-computation f)))
 
@@ -60,7 +60,7 @@
     (force &(suspend (fn [] (+ 1 2))))
     => 3
     ```")
-  (sig force (Fn [(Ref (Suspended a))] a))
+  (sig force (Fn [(Ref (Lazy.Suspended a))] a))
   (defn force [s]
     (~(Lazy.Suspended.suspended s) true))
 
@@ -75,7 +75,7 @@
     (yield &(suspend (fn [] (+ 1 2))))
     => 0
     ```")
-  (sig yield (Fn [(Ref (Suspended a))] a))
+  (sig yield (Fn [(Ref (Lazy.Suspended a))] a))
   (defn yield [s]
     (~(Lazy.Suspended.suspended s) false))
 
@@ -90,7 +90,7 @@
     => false
     ```")
   (implements = =)
-  (sig = (Fn [(Ref (Suspended a)) (Ref (Suspended b))] Bool))
+  (sig = (Fn [(Ref (Lazy.Suspended a)) (Ref (Lazy.Suspended b))] Bool))
   (defn = [s s*]
     (= (yield s) (yield s*)))
 
@@ -102,7 +102,7 @@
     (force= &(suspend (fn [] (+ 1 2))) &(suspend (fn [] (+ 1 2))))
     => true
     ```")
-  (sig force= (Fn [(Ref (Suspended a)) (Ref (Suspended b))] Bool))
+  (sig force= (Fn [(Ref (Lazy.Suspended a)) (Ref (Lazy.Suspended b))] Bool))
   (defn force= [s s*]
     (= (force s) (force s*)))
   

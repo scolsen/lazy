@@ -58,7 +58,7 @@
 
   (doc last "
     Returns a lazy computation that returns the last element of a stream.")
-  (sig last (Fn [(Ref (Stream x s))] (Suspended (Node x))))
+  (sig last (Fn [(Ref (Stream x s))] (Lazy.Suspended (Node x))))
   (defn last [s]
     (Lazy.suspend
       (fn []

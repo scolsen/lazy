@@ -11,9 +11,9 @@
 ;;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ;;  See the License for the specific language governing permissions and
 ;;  limitations under the License.
-
+(load "src/lazy.carp")
+(load "src/stream/interface.carp")
 (load "src/stream/node.carp")
-(load "src/stream/unit.carp")
 
 (defmodule Stream
   (doc advance "
@@ -27,7 +27,7 @@
       (runstream (runstream &stream))
       (Stream [])
       ```")
-  (sig advance (Fn [(Ref (stream x s))] (Suspended Unit)))
+  (sig advance (Fn [(Ref (stream x s))] (Lazy.Suspended Unit)))
   (defn advance [s]
     (Lazy.suspend
       (fn []
@@ -57,7 +57,7 @@
 
   (doc head "
     Returns a lazy computation that returns the first element of a stream.")
-  (sig head (Fn [(Ref (stream x s))] (Suspended (Node x))))
+  (sig head (Fn [(Ref (stream x s))] (Lazy.Suspended (Node x))))
   (defn head [s]
     (Lazy.suspend
       (fn []
@@ -72,7 +72,7 @@
 
   (doc tail "
     Returns a lazy computation that returns the tail of a stream.")
-  (sig tail (Fn [(Ref (stream x s))] (Suspended (stream x s))))
+  (sig tail (Fn [(Ref (stream x s))] (Lazy.Suspended (stream x s))))
   (defn tail [s]
     (Lazy.suspend
       (fn []
