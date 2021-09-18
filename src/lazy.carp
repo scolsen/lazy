@@ -15,30 +15,32 @@
 (doc Lazy
   "The Lazy module provides mechanisms for defining lazy computations.")
 (defmodule Lazy
-  (doc Lazy-Computation
-    "The internal representation of a lazy computation.")
-  (private Lazy-Computation)
-  (hidden Lazy-Computation)
-  (deftype (Lazy-Computation a) [evaluated? Bool, value a, thunk (Fn [] a)])
-
-  (doc lazy-computation
-    "Initializes a lazy computation from a thunk, `f`.")
-  (private lazy-computation)
-  (hidden lazy-computation)
-  (defn lazy-computation [f]
-    (let [l (Lazy-Computation.init false (zero) f)]
-      (fn [evaluate?]
-        (if evaluate?
-             (if @(Lazy-Computation.evaluated? &l)
-                 @(Lazy-Computation.value &l)
-                 (do (Lazy-Computation.set-value! &l (~(Lazy-Computation.thunk &l)))
-		     (Lazy-Computation.set-evaluated?! &l true)
-		     @(Lazy-Computation.value &l)))
-            @(Lazy-Computation.value &l)))))
+  (doc Computation
+    "A computation, either a value or a thunk.")
+  (private Computation)
+  (hidden Computation)
+  (deftype (Computation a)
+    (Comp [(Fn [] a)])
+    (Val [a])
+  )
 
   (doc Suspended
     "The type of lazy computations.")
-  (deftype (Suspended a) [suspended (Fn [Bool] a)])
+  (deftype (Suspended a) [member (Lazy.Computation a)])
+
+  (doc compute
+    "Computes a computation or returns its result.")
+  (private compute)
+  (hidden compute)
+  (defn compute [s evaluate?]
+    (match-ref (Lazy.Suspended.member s)
+      (Lazy.Computation.Val v) @v
+      (Lazy.Computation.Comp c)
+        (if evaluate?
+          (let-do [r (~c)]
+            (set-member! s (Lazy.Computation.Val @&r))
+            r)
+          (zero))))
 
   (doc suspend "
     Suspends a computation, `f`.
@@ -48,7 +50,7 @@
     ```")
   (sig suspend (Fn [(Fn [] a)] (Lazy.Suspended a)))
   (defn suspend [f]
-    (Lazy.Suspended.init (Lazy.lazy-computation f)))
+    (Lazy.Suspended.init (Lazy.Computation.Comp f)))
 
   (doc force "
     Forces evaluation of a `Suspended` computation, `s`. 
@@ -62,7 +64,7 @@
     ```")
   (sig force (Fn [(Ref (Lazy.Suspended a))] a))
   (defn force [s]
-    (~(Lazy.Suspended.suspended s) true))
+    (Lazy.compute s true))
 
   (doc yield "
     Gets the current memoized value of a lazy computation without evaluating the
@@ -77,7 +79,7 @@
     ```")
   (sig yield (Fn [(Ref (Lazy.Suspended a))] a))
   (defn yield [s]
-    (~(Lazy.Suspended.suspended s) false))
+    (Lazy.compute s false))
 
   (doc = "
     Returns true if the values of suspended computations are equivalent, without
