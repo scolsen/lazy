@@ -20,5 +20,5 @@
 (Project.config "output-directory" "out/")
 (Project.config "docs-generate-index" true)
 
-(save-docs Lazy Stream)
+(save-docs Lazy Node Step Stream InfiniteStream)
 (quit)

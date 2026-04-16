@@ -58,90 +58,11 @@
             </div>
             <div class="module">
                 <h1>
-                    Stream
+                    InfiniteStream
                 </h1>
                 <div class="module-description">
-                    <p>The type of Streams.</p>
-<p>Streams are backed by a <code>Step</code> returning function <code>next</code> and a current
-<code>state</code>. Stream processing functions run <code>next</code> on the current <code>state</code> to
-yield the remainder of the stream.</p>
+                    <p>The type of infinite streams.</p>
 
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#!advance">
-                        <h3 id="!advance">
-                            !advance
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (a b c) d)] ())
-                    </p>
-                    <pre class="args">
-                        (!advance s)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>  Advances a stream in place eagerly.
-
-  ```
-  (def stream (from-array &amp;[1 2 3]))
-  (do (!advance &amp;stream) (!advance &amp;stream) stream)
-  =&gt; (Stream [3])
-  ```
-</code></pre>
-
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#=">
-                        <h3 id="=">
-                            =
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (Stream a b) c), (Ref (Stream a b) c)] Bool)
-                    </p>
-                    <pre class="args">
-                        (= s s*)
-                    </pre>
-                    <p class="doc">
-                        
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#advance">
-                        <h3 id="advance">
-                            advance
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (a b c) StaticLifetime)] (Lazy.Suspended ()))
-                    </p>
-                    <pre class="args">
-                        (advance s)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>  Returns a lazy computation that advances a stream in place.
-
-  ```
-  (def stream (from-array &amp;[1 2 3]))
-  (defn runstream [s] (let [_ (force &amp;(advance s))] s))
-  (do (runstream &amp;stream) (runstream &amp;stream))
-  =&gt; (Stream [2 3]) ;; memoization
-  (runstream (runstream &amp;stream))
-  (Stream [])
-  ```
-</code></pre>
-
-                    </p>
                 </div>
                 <div class="binder">
                     <a class="anchor" href="#copy">
@@ -153,13 +74,13 @@ yield the remainder of the stream.</p>
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] (Stream a b))
+                        (Fn [(Ref (InfiniteStream a b) c)] (InfiniteStream a b))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>copies a <code>Stream</code>.</p>
+                        <p>copies a <code>InfiniteStream</code>.</p>
 
                     </p>
                 </div>
@@ -173,76 +94,45 @@ yield the remainder of the stream.</p>
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Stream a b)] ())
+                        (Fn [(InfiniteStream a b)] ())
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>deletes a <code>Stream</code>. Should usually not be called manually.</p>
+                        <p>deletes a <code>InfiniteStream</code>. Should usually not be called manually.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#filter">
-                        <h3 id="filter">
-                            filter
+                    <a class="anchor" href="#increment">
+                        <h3 id="increment">
+                            increment
                         </h3>
                     </a>
                     <div class="description">
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Fn [(Ref a b)] Bool), (Ref (c a d) e)] (c a d))
+                        (Fn [a] (InfiniteStream a a))
                     </p>
                     <pre class="args">
-                        (filter p strm)
+                        (increment start)
                     </pre>
                     <p class="doc">
-                        <pre><code>Given a Stream `stream` and a predicate `p`, returns a new Stream
-that only contains elements that satisfy `p`.
-</code></pre>
+                        <pre><code>Returns an infinite stream that continually returns the successor or
+increment of its previous value (starting with `start`.
 
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#from-array">
-                        <h3 id="from-array">
-                            from-array
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (Array a) b)] (Stream (Maybe a) (Array a)))
-                    </p>
-                    <pre class="args">
-                        (from-array as)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>Creates a stream from an array.
-</code></pre>
+The argument type must implement `inc`.
 
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#head">
-                        <h3 id="head">
-                            head
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (a b c) StaticLifetime)] (Lazy.Suspended (Node b)))
-                    </p>
-                    <pre class="args">
-                        (head s)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>Returns a lazy computation that returns the first element of a stream.
+```
+(increment 0)
+=&gt; (InfiniteStream Fn 0)
+(force &amp;(head &amp;(increment 0)))
+=&gt; 0
+(force &amp;(tail &amp;(increment 0)))
+=&gt; (InfiniteStream Fn 1)
+```
 </code></pre>
 
                     </p>
@@ -257,13 +147,13 @@ that only contains elements that satisfy `p`.
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Fn [a] (Step b a)), a] (Stream b a))
+                        (Fn [(Fn [a] (Step b a)), a] (InfiniteStream b a))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>creates a <code>Stream</code>.</p>
+                        <p>creates a <code>InfiniteStream</code>.</p>
 
                     </p>
                 </div>
@@ -277,7 +167,7 @@ that only contains elements that satisfy `p`.
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Fn [a] (Step b a)), a] (Stream b a))
+                        (Fn [(Fn [a] (Step b a)), a] (InfiniteStream b a))
                     </p>
                     <pre class="args">
                         (init- f s)
@@ -287,46 +177,46 @@ that only contains elements that satisfy `p`.
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#last">
-                        <h3 id="last">
-                            last
+                    <a class="anchor" href="#loop">
+                        <h3 id="loop">
+                            loop
                         </h3>
                     </a>
                     <div class="description">
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) StaticLifetime)] (Lazy.Suspended (Node a)))
+                        (Fn [(Fn [] a b)] (InfiniteStream a Int))
                     </p>
                     <pre class="args">
-                        (last s)
+                        (loop f)
                     </pre>
                     <p class="doc">
-                        <pre><code>Returns a lazy computation that returns the last element of a stream.
+                        <pre><code>Returns an infinite stream that continually executes a nullary function `f`,
+keeping track of the number of executions as its state.
 </code></pre>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#map">
-                        <h3 id="map">
-                            map
+                    <a class="anchor" href="#loop-with">
+                        <h3 id="loop-with">
+                            loop-with
                         </h3>
                     </a>
                     <div class="description">
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Fn [a] b) StaticLifetime), (Ref (c a d) e)] (c b d))
+                        (Fn [(Fn [a] a b), a] (InfiniteStream a a))
                     </p>
                     <pre class="args">
-                        (map f strm)
+                        (loop-with f s)
                     </pre>
                     <p class="doc">
-                        <pre><code>Maps a function `f` over a stream, yielding a new stream.
-
-`f` is only applied to the stream's values--the resulting stream's `state`
-remains unchanged.
+                        <pre><code>Returns an infinite stream that continually executes a unary function `f`.
+First applies f to `s`, which serves as the starting state of the stream,
+then applies `f` to the result of the last application.
 </code></pre>
 
                     </p>
@@ -341,13 +231,13 @@ remains unchanged.
                         instantiate
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] (Ref (Fn [b] (Step a b)) c))
+                        (Fn [(Ref (InfiniteStream a b) c)] (Ref (Fn [b] (Step a b)) c))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>gets the <code>next</code> property of a <code>Stream</code>.</p>
+                        <p>gets the <code>next</code> property of a <code>InfiniteStream</code>.</p>
 
                     </p>
                 </div>
@@ -361,7 +251,7 @@ remains unchanged.
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] (Fn [b] (Step a b)))
+                        (Fn [(Ref (InfiniteStream a b) c)] (Fn [b] (Step a b)))
                     </p>
                     <pre class="args">
                         (next- s)
@@ -380,76 +270,33 @@ remains unchanged.
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] String)
+                        (Fn [(Ref (InfiniteStream a b) c)] String)
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>converts a <code>Stream</code> to a string.</p>
+                        <p>converts a <code>InfiniteStream</code> to a string.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#range">
-                        <h3 id="range">
-                            range
+                    <a class="anchor" href="#repeat">
+                        <h3 id="repeat">
+                            repeat
                         </h3>
                     </a>
                     <div class="description">
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [a, a] (Stream a a))
+                        (Fn [a] (InfiniteStream a a))
                     </p>
                     <pre class="args">
-                        (range start finish)
+                        (repeat x)
                     </pre>
                     <p class="doc">
-                        <pre><code>Returns a stream of a range of values from `start` to `finish`.
-
-The arguments to this function must implement `inc`.
-
-```
-(range 0 10)
-=&gt; (Stream Fn 0)
-(force &amp;(head &amp;(range 0 10)))
-=&gt; 0
-(force &amp;(tail &amp;(range 0 10)))
-=&gt; (Stream Fn 1)
-(force &amp;(tail &amp;(tail &amp;(range 0 10))))
-=&gt; (Stream Fn 2)
-```
-</code></pre>
-
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#replace">
-                        <h3 id="replace">
-                            replace
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (Fn [a] b) c), (Ref (Fn [b] (Step d b)) StaticLifetime), (Ref (e f a) g)] (e d b))
-                    </p>
-                    <pre class="args">
-                        (replace g h strm)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>Replaces `stream` with a new stream by applying `g` to `stream`'s state, to
-yield a new state. The resulting stream applies `h` to process the new
-state.
-
-```
-;; replace an array-backed stream with a stream that iterates successors
-;; starting from the array's length
-(replace &amp;(fn [arr] (Array.length &amp;arr)) &amp;(fn [s] (Step.Yield @s (+ 1 @s))) (from-array &amp;[1 2 3]))
-=&gt; (Stream Fn 3)
-```
+                        <pre><code>Returns an infinite stream of a constant value, `x`.
 </code></pre>
 
                     </p>
@@ -464,13 +311,13 @@ state.
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Stream a b), (Fn [b] (Step a b))] (Stream a b))
+                        (Fn [(InfiniteStream a b), (Fn [b] (Step a b))] (InfiniteStream a b))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>sets the <code>next</code> property of a <code>Stream</code>.</p>
+                        <p>sets the <code>next</code> property of a <code>InfiniteStream</code>.</p>
 
                     </p>
                 </div>
@@ -484,13 +331,13 @@ state.
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c), (Fn [b] (Step a b))] ())
+                        (Fn [(Ref (InfiniteStream a b) c), (Fn [b] (Step a b))] ())
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>sets the <code>next</code> property of a <code>Stream</code> in place.</p>
+                        <p>sets the <code>next</code> property of a <code>InfiniteStream</code> in place.</p>
 
                     </p>
                 </div>
@@ -504,13 +351,13 @@ state.
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Stream a b), b] (Stream a b))
+                        (Fn [(InfiniteStream a b), b] (InfiniteStream a b))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>sets the <code>state</code> property of a <code>Stream</code>.</p>
+                        <p>sets the <code>state</code> property of a <code>InfiniteStream</code>.</p>
 
                     </p>
                 </div>
@@ -524,13 +371,13 @@ state.
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c), b] ())
+                        (Fn [(Ref (InfiniteStream a b) c), b] ())
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>sets the <code>state</code> property of a <code>Stream</code> in place.</p>
+                        <p>sets the <code>state</code> property of a <code>InfiniteStream</code> in place.</p>
 
                     </p>
                 </div>
@@ -544,7 +391,7 @@ state.
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c), b] ())
+                        (Fn [(Ref (InfiniteStream a b) c), b] ())
                     </p>
                     <pre class="args">
                         (set-state- strm s)
@@ -563,13 +410,13 @@ state.
                         instantiate
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] (Ref b c))
+                        (Fn [(Ref (InfiniteStream a b) c)] (Ref b c))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>gets the <code>state</code> property of a <code>Stream</code>.</p>
+                        <p>gets the <code>state</code> property of a <code>InfiniteStream</code>.</p>
 
                     </p>
                 </div>
@@ -583,7 +430,7 @@ state.
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] b)
+                        (Fn [(Ref (InfiniteStream a b) c)] b)
                     </p>
                     <pre class="args">
                         (state- s)
@@ -602,77 +449,13 @@ state.
                         template
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] String)
+                        (Fn [(Ref (InfiniteStream a b) c)] String)
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>converts a <code>Stream</code> to a string.</p>
-
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#tail">
-                        <h3 id="tail">
-                            tail
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (a b c) StaticLifetime)] (Lazy.Suspended (a b c)))
-                    </p>
-                    <pre class="args">
-                        (tail s)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>Returns a lazy computation that returns the tail of a stream.
-</code></pre>
-
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#to-array">
-                        <h3 id="to-array">
-                            to-array
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (Stream a b) c)] (Array a))
-                    </p>
-                    <pre class="args">
-                        (to-array s)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>Converts a stream to an array.
-</code></pre>
-
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#transform">
-                        <h3 id="transform">
-                            transform
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [(Ref (Fn [a] b) c), (Ref (Fn [d] e) f), (Ref (Fn [e] (Step a e)) StaticLifetime), (Ref (g h d) i)] (g b e))
-                    </p>
-                    <pre class="args">
-                        (transform f g h strm)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>Alters a stream's state to yield a new stream and maps a function `f` to
-that stream's values.
-</code></pre>
+                        <p>converts a <code>InfiniteStream</code> to a string.</p>
 
                     </p>
                 </div>
@@ -686,13 +469,13 @@ that stream's values.
                         instantiate
                     </div>
                     <p class="sig">
-                        (Fn [(Stream a b), (Ref (Fn [(Fn [b] (Step a b))] (Fn [b] (Step a b)) c) d)] (Stream a b))
+                        (Fn [(InfiniteStream a b), (Ref (Fn [(Fn [b] (Step a b))] (Fn [b] (Step a b)) c) d)] (InfiniteStream a b))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>updates the <code>next</code> property of a <code>(Stream a s)</code> using a function <code>f</code>.</p>
+                        <p>updates the <code>next</code> property of a <code>(InfiniteStream a s)</code> using a function <code>f</code>.</p>
 
                     </p>
                 </div>
@@ -706,35 +489,13 @@ that stream's values.
                         instantiate
                     </div>
                     <p class="sig">
-                        (Fn [(Stream a b), (Ref (Fn [b] b c) d)] (Stream a b))
+                        (Fn [(InfiniteStream a b), (Ref (Fn [b] b c) d)] (InfiniteStream a b))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>updates the <code>state</code> property of a <code>(Stream a s)</code> using a function <code>f</code>.</p>
-
-                    </p>
-                </div>
-                <div class="binder">
-                    <a class="anchor" href="#zero">
-                        <h3 id="zero">
-                            zero
-                        </h3>
-                    </a>
-                    <div class="description">
-                        defn
-                    </div>
-                    <p class="sig">
-                        (Fn [] (Stream a b))
-                    </p>
-                    <pre class="args">
-                        (zero)
-                    </pre>
-                    <p class="doc">
-                        <pre><code>The zero stream; comprised of a `next` that constantly returns `Step.Done`
-and the `zero` value for the stream's `state`.
-</code></pre>
+                        <p>updates the <code>state</code> property of a <code>(InfiniteStream a s)</code> using a function <code>f</code>.</p>
 
                     </p>
                 </div>

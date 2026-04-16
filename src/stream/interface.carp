@@ -16,18 +16,17 @@
 
 ;; Stream interfaces. All streams implement these interfaces,
 ;; which are usually just aliases to type getters and setters.
-;; TODO: Docing interfaces causes hangs #842
-;(doc get-state "
-;  Given a stream, returns its current state.")
+(doc get-state
+  "Given a stream, returns its current state.")
 (definterface get-state (Fn [(Ref (stream a s))] s))
-;(doc get-next "
-;  Given a stream, returns its next function (a function for computing the next `Step` in the stream).")
+(doc get-next
+  "Given a stream, returns its next function (a function for computing the next `Step` in the stream).")
 (definterface get-next (Fn [(Ref (stream a s))] (Fn [s] (Step a s))))
-;(doc new-state! "
-;  Given a stream, updates its current state to a new state `s`.")
+(doc new-state!
+  "Given a stream, updates its current state to a new state `s`.")
 (definterface new-state! (Fn [(Ref (stream a s)) s] ()))
-;(doc stream "
-;  Initializes a new stream from a state `s` and a function that computes a `Step` from a state.")
+(doc stream
+  "Initializes a new stream from a state `s` and a function that computes a `Step` from a state.")
 (definterface stream (Fn [(Fn [s] (Step a s)) s] (stream a s)))
 
 ;; Stream interface implementations

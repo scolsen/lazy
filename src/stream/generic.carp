@@ -83,26 +83,19 @@
                  (Step.Skip t) (stream nx t)
                  (Step.Yield x u) (stream nx u))))))
 
-  ;; TODO: This should work, and is sufficient to define replace, map, etc.
-  ;; however, Carp currently reports a non-exhaustive match for this function,
-  ;; though it's not clear why.
-  ;(doc transform "
-  ;  Alters a stream's state to yield a new stream and maps a function `f` to
-  ;  that stream's values.")
-  ;(sig transform (Fn [(Ref (Fn [a] b)) (Ref (Fn [s] t)) (Ref (Fn [t] (Step a t))) (Ref (stream q s))] (stream b t)))
-  ;(defn transform [f g h strm]
-  ;  ;; When f is passed by reference from a parent context, e.g. replace
-  ;  ;; or map the emitted c code sometimes loses track of the reference in the n*
-  ;  ;; lambda.
-  ;  ;; We copy it here for safety.
-  ;  (let [n (get-next strm)
-  ;        s (get-state strm)
-  ;        f* @f
-  ;        n* (fn [st] (match (~h st)
-  ;                           (Step.Done) (Step.Done)
-  ;                           (Step.Skip s*) (Step.Skip s*)
-  ;                           (Step.Yield x s**) (Step.Yield (f* x) s**)))]
-  ;    (stream n* (~g s))))
+  (doc transform "
+    Alters a stream's state to yield a new stream and maps a function `f` to
+    that stream's values.")
+  (sig transform (Fn [(Ref (Fn [a] b)) (Ref (Fn [s] t)) (Ref (Fn [t] (Step a t))) (Ref (stream q s))] (stream b t)))
+  (defn transform [f g h strm]
+    (let [n (get-next strm)
+          s (get-state strm)
+          f* @f
+          n* (fn [st] (match (~h st)
+                             (Step.Done) (Step.Done)
+                             (Step.Skip s*) (Step.Skip s*)
+                             (Step.Yield x s**) (Step.Yield (f* x) s**)))]
+      (stream n* (~g s))))
 
   (doc replace "
     Replaces `stream` with a new stream by applying `g` to `stream`'s state, to

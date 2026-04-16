@@ -45,4 +45,23 @@
     &(Node.Nil)
     &(do (for [i 0 11] (!advance &ranged)) (Lazy.force &(head &ranged)))
     "range generates a bounded stream of values")
+  (assert-equal test
+    &(the (Array (Maybe Int)) [])
+    &(to-array &(the (Stream (Maybe Int) (Array Int)) (Stream.zero)))
+    "to-array on empty stream returns empty array")
+  (assert-false test
+    (= &(from-array &[1 2 3]) &(from-array &[4 5 6]))
+    "= returns false for streams with different values")
+  (assert-equal test
+    &(Node.Nil)
+    &(Lazy.force &(last &(the (Stream (Maybe Int) (Array Int)) (Stream.zero))))
+    "last on empty stream returns Nil")
+  (assert-equal test
+    &(Node.Node 5)
+    &(Lazy.force &(head &(range 5 10)))
+    "range head returns start value")
+  (assert-equal test
+    &(from-array &[2 3])
+    &(Lazy.force &(tail &(from-array &[1 2 3])))
+    "tail returns the rest of the stream")
 )
