@@ -26,16 +26,15 @@
   (defn zero []
     (Node.Nil))
 
-  (todo = "TODO: Update once match-ref supports wildcards `_`")
   (implements = =)
   (defn = [n n*]
     (match-ref n
       (Node.Node x)
         (match-ref n*
           (Node.Node y) (= x y)
-          (Node.Nil) false)
+          _ false)
       (Node.Nil)
         (match-ref n*
           (Node.Nil) true
-          (Node.Node z) false)))
+          _ false)))
 )

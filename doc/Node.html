@@ -58,10 +58,12 @@
             </div>
             <div class="module">
                 <h1>
-                    Lazy
+                    Node
                 </h1>
                 <div class="module-description">
-                    <p>The Lazy module provides mechanisms for defining lazy computations.</p>
+                    <p>The type of stream values.</p>
+<p>In order to return a safe bottom value when getting stream values, we need
+Node to avoid having to return Step directly.</p>
 
                 </div>
                 <div class="binder">
@@ -74,215 +76,172 @@
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Lazy.Suspended a) b), (Ref (Lazy.Suspended a) c)] Bool)
+                        (Fn [(Ref (Node a) b), (Ref (Node a) b)] Bool)
                     </p>
                     <pre class="args">
-                        (= s s*)
+                        (= n n*)
                     </pre>
                     <p class="doc">
-                        <pre><code>Returns true if the values of suspended computations are equivalent, without
-forcing evaluation.
-
-```
-(= &amp;(suspend (fn [] (+ 1 2))) &amp;(suspend (fn [] (+ 1 2))))
-=&gt; true
-(= (force &amp;(suspend (fn [] (+ 1 2)))) &amp;(suspend (fn [] (+ 1 2))))
-=&gt; false
-```
-</code></pre>
-
+                        
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#Suspended">
-                        <h3 id="Suspended">
-                            <a href="Lazy.Suspended.html">
-                                Suspended
-                            </a>
+                    <a class="anchor" href="#Nil">
+                        <h3 id="Nil">
+                            Nil
                         </h3>
                     </a>
                     <div class="description">
-                        module
+                        template
                     </div>
                     <p class="sig">
-                        Module
+                        (Fn [] (Node a))
                     </p>
                     <span>
                         
                     </span>
                     <p class="doc">
-                        <p>The type of lazy computations.</p>
+                        <p>creates a <code>Nil</code>.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#delay">
-                        <h3 id="delay">
-                            delay
+                    <a class="anchor" href="#Node">
+                        <h3 id="Node">
+                            Node
                         </h3>
                     </a>
                     <div class="description">
-                        macro
+                        template
                     </div>
                     <p class="sig">
-                        Macro
+                        (Fn [a] (Node a))
                     </p>
-                    <pre class="args">
-                        (delay f :rest arguments)
-                    </pre>
+                    <span>
+                        
+                    </span>
                     <p class="doc">
-                        <pre><code>Delays the application of `f` to `arguments`, returns a suspended
-computation.
-
-If `arguments` exceeds the arity of `f`, only the first n arguments 
-will be passed to f in the resulting form.
-
-```
-(delay inc 1)
-=&gt; (suspend (fn [] (inc 1)))
-(eval (delay inc 1))
-=&gt; (Suspended fn)
-```
-</code></pre>
+                        <p>creates a <code>Node</code>.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#force">
-                        <h3 id="force">
-                            force
+                    <a class="anchor" href="#copy">
+                        <h3 id="copy">
+                            copy
                         </h3>
                     </a>
                     <div class="description">
-                        defn
+                        template
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Lazy.Suspended a) b)] a)
+                        (Fn [(Ref (Node a) b)] (Node a))
                     </p>
-                    <pre class="args">
-                        (force s)
-                    </pre>
+                    <span>
+                        
+                    </span>
                     <p class="doc">
-                        <pre><code>Forces evaluation of a `Suspended` computation, `s`. 
-
-After a computation is forced, the resulting value is memoized. Subsequent
-calls to `force` will yield the memoized value.
-
-```
-(force &amp;(suspend (fn [] (+ 1 2))))
-=&gt; 3
-```
-</code></pre>
+                        <p>copies a <code>Node</code>.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#force=">
-                        <h3 id="force=">
-                            force=
+                    <a class="anchor" href="#delete">
+                        <h3 id="delete">
+                            delete
                         </h3>
                     </a>
                     <div class="description">
-                        defn
+                        template
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Lazy.Suspended a) b), (Ref (Lazy.Suspended a) c)] Bool)
+                        (Fn [(Node a)] ())
                     </p>
-                    <pre class="args">
-                        (force= s s*)
-                    </pre>
+                    <span>
+                        
+                    </span>
                     <p class="doc">
-                        <pre><code>Forces the evaluation of two suspended computations and returns true if
-their values are equivalent
-
-```
-(force= &amp;(suspend (fn [] (+ 1 2))) &amp;(suspend (fn [] (+ 1 2))))
-=&gt; true
-```
-</code></pre>
+                        <p>deletes a <code>Node</code>. This should usually not be called manually.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#lazy">
-                        <h3 id="lazy">
-                            lazy
+                    <a class="anchor" href="#get-tag">
+                        <h3 id="get-tag">
+                            get-tag
                         </h3>
                     </a>
                     <div class="description">
-                        macro
+                        instantiate
                     </div>
                     <p class="sig">
-                        Macro
+                        (Fn [(Ref (Node a) b)] Int)
                     </p>
-                    <pre class="args">
-                        (lazy body)
-                    </pre>
+                    <span>
+                        
+                    </span>
                     <p class="doc">
-                        <pre><code>Wraps a form `body`, in a thunk, capturing its environment, `body` in a lazy
-computation.
-
-```
-(lazy (inc 1))
-=&gt; (suspend (fn [] (inc 1)))
-(eval (lazy (inc 1)))
-=&gt; (Suspended fn)
-```
-</code></pre>
+                        <p>Gets the tag from a <code>Node</code>.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#suspend">
-                        <h3 id="suspend">
-                            suspend
+                    <a class="anchor" href="#prn">
+                        <h3 id="prn">
+                            prn
                         </h3>
                     </a>
                     <div class="description">
-                        defn
+                        template
                     </div>
                     <p class="sig">
-                        (Fn [(Fn [] a)] (Lazy.Suspended a))
+                        (Fn [(Ref (Node a) b)] String)
                     </p>
-                    <pre class="args">
-                        (suspend f)
-                    </pre>
+                    <span>
+                        
+                    </span>
                     <p class="doc">
-                        <pre><code>Suspends a computation, `f`.
-
-```
-(suspend (fn [] (+ 1 2)))
-```
-</code></pre>
+                        <p>converts a <code>Node</code> to a string.</p>
 
                     </p>
                 </div>
                 <div class="binder">
-                    <a class="anchor" href="#yield">
-                        <h3 id="yield">
-                            yield
+                    <a class="anchor" href="#str">
+                        <h3 id="str">
+                            str
+                        </h3>
+                    </a>
+                    <div class="description">
+                        template
+                    </div>
+                    <p class="sig">
+                        (Fn [(Ref (Node a) b)] String)
+                    </p>
+                    <span>
+                        
+                    </span>
+                    <p class="doc">
+                        <p>converts a <code>Node</code> to a string.</p>
+
+                    </p>
+                </div>
+                <div class="binder">
+                    <a class="anchor" href="#zero">
+                        <h3 id="zero">
+                            zero
                         </h3>
                     </a>
                     <div class="description">
                         defn
                     </div>
                     <p class="sig">
-                        (Fn [(Ref (Lazy.Suspended a) b)] a)
+                        (Fn [] (Node a))
                     </p>
                     <pre class="args">
-                        (yield s)
+                        (zero)
                     </pre>
                     <p class="doc">
-                        <pre><code>Gets the current memoized value of a lazy computation without evaluating the
-computation.
-
-When `yield` is called before evalauating the computation, it returns
-`zero`.
-
-```
-(yield &amp;(suspend (fn [] (+ 1 2))))
-=&gt; 0
-```
+                        <pre><code>Returns the Nil node.
 </code></pre>
 
                     </p>

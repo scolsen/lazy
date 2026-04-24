@@ -87,7 +87,6 @@
     (force &(tail &(tail &(range 0 10))))
     => (Stream Fn 2)
     ```")
-  (todo range "TODO: add a unit test for range")
   (sig range (Fn [a a] (Stream a a)))
   (defn range [start finish]
     (let [n (fn [s] (if (> s finish)

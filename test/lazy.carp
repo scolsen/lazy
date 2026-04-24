@@ -19,10 +19,6 @@
 
 (deftest test
   (assert-equal test
-    &(Suspended.init (lazy-computation (fn [] (+ 1 2))))
-    &(suspend (fn [] (+ 1 2)))
-    "suspend creates a lazy computation")
-  (assert-equal test
     3
     (force &(suspend (fn [] (+ 1 2))))
     "force forces evaluation of a lazy computation")
@@ -34,14 +30,28 @@
   (assert-equal test
     0
     (yield &(suspend (fn [] (+ 1 2))))
-    "yield returns the value of a suspended computation without evaluating it")
+    "yield returns zero for an unevaluated suspended computation")
+  (assert-equal test
+    3
+    (let [s (suspend (fn [] (+ 1 2)))]
+      (do (ignore (force &s))
+          (yield &s)))
+    "yield returns the memoized value after force")
+  (assert-true test
+    (= &(suspend (fn [] (+ 1 2))) &(suspend (fn [] (+ 3 4))))
+    "= compares unevaluated suspensions without forcing")
+  (assert-true test
+    (force= &(suspend (fn [] (+ 1 2))) &(suspend (fn [] (+ 1 2))))
+    "force= forces and compares suspended computations")
+  (assert-false test
+    (force= &(suspend (fn [] (+ 1 2))) &(suspend (fn [] (+ 3 4))))
+    "force= detects unequal forced values")
   (assert-equal test
     2
     (force &(Lazy.delay mod 2 4))
     "delay promotes the application of a function to a lazy computation")
   (assert-equal test
     2
-    ;; TODO: Once issue #849 is resolved, we can use a simpler function here.
     (force &(Lazy.lazy (mod 2 4)))
     "lazy promotes an arbitrary form to a lazy computation")
 )
